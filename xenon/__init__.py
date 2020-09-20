@@ -1,7 +1,7 @@
 from .entities import *
 from .errors import *
 
-__title__ = "discouple"
+__title__ = "xenon"
 __version__ = "0.0.1-pre"
 __author__ = "Merlin Fuchs"
 __license__ = "MIT"
