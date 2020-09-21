@@ -48,7 +48,7 @@ class File:
 class Request:
     BASE = 'https://discord.com/api/v8'
 
-    def __init__(self, method, path, max_tries=5, **params):
+    def __init__(self, method, path, max_tries=5, converter=None, **params):
         self.method = method
         self.path = path.strip("/")
         self.max_tries = max_tries
@@ -63,6 +63,8 @@ class Request:
         self.future = asyncio.Future()
         self.task = None
 
+        self._converter = converter
+
     @property
     def bucket(self):
         if self._webhook_id is not None:
@@ -73,6 +75,17 @@ class Request:
 
     def cancel(self):
         self.task.cancel()
+
+    def set_data(self, data):
+        if not self.future.done():
+            if self._converter is not None:
+                data = self._converter(data)
+
+            self.future.set_result(data)
+
+    def set_exception(self, exc):
+        if not self.future.done():
+            self.future.set_exception(exc)
 
     def __await__(self):
         return self.future.__await__()
@@ -96,7 +109,7 @@ class HTTPClient:
             req.ratelimit = bucket_rl
             await bucket_rl.wait()
 
-    async def _perform_request(self, req, converter=None, **kwargs):
+    async def _perform_request(self, req, **kwargs):
         headers = {
             "User-Agent": "",
             "Authorization": f"Bot {self._token}"
@@ -125,11 +138,7 @@ class HTTPClient:
                     req.ratelimit = Ratelimit(reset_after, remaining)
                     await self._ratelimits.set_bucket(req.bucket, reset_after, remaining)
 
-                if converter is not None:
-                    req.future.set_result(converter(data))
-
-                else:
-                    req.future.set_result(data)
+                req.set_data(data)
 
             elif resp.status == 429:
                 if resp.headers.get('Via'):
@@ -147,19 +156,19 @@ class HTTPClient:
 
                 else:
                     # Probably banned by cloudflare
-                    req.future.set_exception(HTTPException(resp, data))
+                    req.set_exception(HTTPException(resp, data))
 
             elif resp.status >= 500:
                 raise HTTPException(resp, data)
 
             elif resp.status == 403:
-                req.future.set_exception(HTTPForbidden(resp, data))
+                req.set_exception(HTTPForbidden(resp, data))
 
             elif resp.status == 404:
-                req.future.set_exception(HTTPNotFound(resp, data))
+                req.set_exception(HTTPNotFound(resp, data))
 
             elif resp.status == 400:
-                req.future.set_exception(HTTPNotFound(resp, data))
+                req.set_exception(HTTPNotFound(resp, data))
 
             else:
                 raise HTTPException(resp, data)
@@ -187,10 +196,18 @@ class HTTPClient:
                 last_error = e
                 await asyncio.sleep(i)
             except Exception as e:
-                req.future.set_exception(e)
+                req.set_exception(e)
                 break
         else:
-            req.future.set_exception(last_error)
+            req.set_exception(last_error)
+
+    def _entity_factory(self, cls):
+        def _predicate(data):
+            e = cls(data)
+            e.fill_http(self)
+            return e
+
+        return _predicate
 
     def start_request(self, req, **kwargs):
         if self._session is None:
@@ -200,6 +217,172 @@ class HTTPClient:
         return req.task
 
     def get_guild(self, guild_id):
-        req = Request("GET", "/guilds/{guild_id}", guild_id=guild_id)
+        req = Request("GET", "/guilds/{guild_id}", converter=self._entity_factory(Guild), guild_id=guild_id)
         self.start_request(req)
         return req
+
+    def edit_guild(self, guild_id, **json):
+        req = Request("PATCH", "/guilds/{guild_id}", converter=self._entity_factory(Guild), guild_id=guild_id)
+        self.start_request(req, json=json)
+        return req
+
+    def delete_guild(self, guild_id):
+        req = Request("DELETE", "/guilds/{guild_id}", guild_id=guild_id)
+        self.start_request(req)
+        return req
+
+    def get_guild_channels(self, guild_id):
+        def _converter(data):
+            channels = []
+            for channel in data:
+                e = Channel(channel)
+                e.fill_http(self)
+                channels.append(e)
+
+            return channels
+
+        req = Request("GET", "/guilds/{guild_id}/channels", converter=_converter, guild_id=guild_id)
+        self.start_request(req)
+        return req
+
+    def create_guild_channel(self):
+        pass
+
+    def get_guild_members(self):
+        pass
+
+    def get_guild_member(self):
+        pass
+
+    def edit_guild_member(self):
+        pass
+
+    def remove_guild_member_role(self):
+        pass
+
+    def add_guild_member_role(self):
+        pass
+
+    def remove_guild_member(self):
+        pass
+
+    def get_guild_bans(self):
+        pass
+
+    def get_guild_ban(self):
+        pass
+
+    def create_guild_ban(self):
+        pass
+
+    def remove_guild_ban(self):
+        pass
+
+    def get_guild_roles(self, guild_id):
+        def _converter(data):
+            roles = []
+            for role in data:
+                e = Role(role)
+                e.fill_http(self)
+                roles.append(e)
+
+            return roles
+
+        req = Request("GET", "/guilds/{guild_id}/roles", converter=_converter, guild_id=guild_id)
+        self.start_request(req)
+        return req
+
+    def create_guild_role(self):
+        pass
+
+    def edit_guild_role(self):
+        pass
+
+    def delete_guild_role(self):
+        pass
+
+    def get_guild_invites(self):
+        pass
+
+    def get_channel(self, channel_id):
+        req = Request("GET", "/channels/{channel_id}", converter=self._entity_factory(Channel), channel_id=channel_id)
+        self.start_request(req)
+        return req
+
+    def edit_channel(self):
+        pass
+
+    def edit_channel_permissions(self):
+        pass
+
+    def delete_channel_permission(self):
+        pass
+
+    def delete_channel(self):
+        pass
+
+    def get_channel_invites(self):
+        pass
+
+    def create_channel_invite(self):
+        pass
+
+    def get_channel_messages(self):
+        pass
+
+    def get_pinned_channel_messages(self):
+        pass
+
+    def get_channel_message(self):
+        pass
+
+    def create_message(self):
+        pass
+
+    def edit_message(self):
+        pass
+
+    def pin_message(self):
+        pass
+
+    def unpin_message(self):
+        pass
+
+    def delete_message(self):
+        pass
+
+    def bulk_delete_messages(self):
+        pass
+
+    def get_reactions(self):
+        pass
+
+    def create_reaction(self):
+        pass
+
+    def delete_own_reaction(self):
+        pass
+
+    def delete_user_reaction(self):
+        pass
+
+    def delete_all_reactions(self):
+        pass
+
+    def get_user(self):
+        pass
+
+    def edit_me(self):
+        pass
+
+    def create_webhook(self):
+        pass
+
+    def execute_webhook(self):
+        pass
+
+    def edit_webhook(self):
+        pass
+
+    def delete_webhook(self):
+        pass
