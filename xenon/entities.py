@@ -30,7 +30,8 @@ def parse_time(timestamp):
 class Asset:
     BASE = "https://cdn.discordapp.com"
 
-    def __init__(self, path):
+    def __init__(self, http, path):
+        self._http = http
         self.path = path
         self.url = f"{self.BASE}/{self.path.strip('/')}"
 
@@ -176,31 +177,31 @@ class Guild(PartialGuild):
             return None
 
         if fmt is not None:
-            return Asset(f"icons/{self.id}/{self.icon}.{fmt}")
+            return Asset(self._http, f"icons/{self.id}/{self.icon}.{fmt}")
 
         elif self.icon.startswith("a_"):
-            return Asset(f"icons/{self.id}/{self.icon}.gif")
+            return Asset(self._http, f"icons/{self.id}/{self.icon}.gif")
 
         else:
-            return Asset(f"icons/{self.id}/{self.icon}.{static_fmt}")
+            return Asset(self._http, f"icons/{self.id}/{self.icon}.{static_fmt}")
 
     def splash_url_as(self, fmt="webp"):
         if self.splash is None:
             return None
 
-        return Asset(f"icons/{self.id}/{self.icon}.{fmt}")
+        return Asset(self._http, f"icons/{self.id}/{self.icon}.{fmt}")
 
     def discovery_splash_url_as(self, fmt="webp"):
         if self.discovery_splash is None:
             return None
 
-        return Asset(f"discovery-splashes/{self.id}/{self.discovery_splash}.{fmt}")
+        return Asset(self._http, f"discovery-splashes/{self.id}/{self.discovery_splash}.{fmt}")
 
     def banner_url_as(self, fmt="webp"):
         if self.banner is None:
             return None
 
-        return Asset(f"banners/{self.id}/{self.banner}.{fmt}")
+        return Asset(self._http, f"banners/{self.id}/{self.banner}.{fmt}")
 
     async def fetch_channels(self):
         pass
@@ -247,7 +248,7 @@ class Channel(Entity):
         yield from self._data
 
     def avatar_url_as(self, fmt="webp"):
-        return Asset(f"app-icons/{self.application_id}/{self.icon}.{fmt}")
+        return Asset(self._http, f"app-icons/{self.application_id}/{self.icon}.{fmt}")
 
     @property
     def avatar_url(self):
@@ -323,16 +324,16 @@ class User(Entity):
     def avatar_url_as(self, fmt=None, static_fmt="webp"):
         if self.avatar is None:
             if fmt is not None:
-                return Asset(f"avatars/{self.id}/{self.avatar}.{fmt}")
+                return Asset(self._http, f"avatars/{self.id}/{self.avatar}.{fmt}")
 
             elif self.avatar.startswith("a_"):
-                return Asset(f"avatars/{self.id}/{self.avatar}.gif")
+                return Asset(self._http, f"avatars/{self.id}/{self.avatar}.gif")
 
             else:
-                return Asset(f"avatars/{self.id}/{self.avatar}.{static_fmt}")
+                return Asset(self._http, f"avatars/{self.id}/{self.avatar}.{static_fmt}")
 
         else:
-            return Asset(f"embed/avatars/{int(self.discriminator) % 5}.png")
+            return Asset(self._http, f"embed/avatars/{int(self.discriminator) % 5}.png")
 
 
 class Member(User):
