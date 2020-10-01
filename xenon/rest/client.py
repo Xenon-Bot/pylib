@@ -2,8 +2,10 @@ import asyncio
 import orjson
 from urllib.parse import quote as urlquote
 import aiohttp
+from enum import Enum
 
 from entities import *
+from flags import *
 from .ratelimits import *
 from .errors import *
 
@@ -22,6 +24,38 @@ async def json_or_text(response):
         pass
 
     return text
+
+
+def entity_or_id(thing):
+    if isinstance(thing, Entity):
+        return thing.id
+
+    return thing
+
+
+def make_json(options, allowed=None, converters=None):
+    json = options.pop("raw", {})
+    json.update(options)
+
+    def _default_converter(v):
+        if isinstance(v, Enum) or isinstance(v, Flags):
+            return v.value
+
+        if isinstance(v, Entity):
+            return v.id
+
+        return v
+
+    converters = converters or {}
+    for k, v in json.items():
+        converter = converters.get(k, _default_converter)
+        json[k] = converter(v)
+
+    if allowed is None:
+        return json
+
+    else:
+        return {k: v for k, v in json.items() if k in allowed}
 
 
 class File:
@@ -216,22 +250,30 @@ class HTTPClient:
         req.task = self.loop.create_task(self._request_task(req, **kwargs))
         return req.task
 
-    def get_guild(self, guild_id):
-        req = Request("GET", "/guilds/{guild_id}", converter=self._entity_factory(Guild), guild_id=guild_id)
+    def get_guild(self, guild):
+        req = Request("GET", "/guilds/{guild_id}",
+                      converter=self._entity_factory(Guild), guild_id=entity_or_id(guild))
         self.start_request(req)
         return req
 
-    def edit_guild(self, guild_id, **json):
-        req = Request("PATCH", "/guilds/{guild_id}", converter=self._entity_factory(Guild), guild_id=guild_id)
+    def edit_guild(self, guild, **options):
+        req = Request("PATCH", "/guilds/{guild_id}",
+                      converter=self._entity_factory(Guild), guild_id=entity_or_id(guild))
+
+        allowed_keys = ("name", "region", "verification_level", "default_message_notifications",
+                        "explicit_content_filter", "afk_channel_id", "adk_timeout", "icon", "owner_id",
+                        "splash", "banner", "system_channel_id", "rules_channel_id", "public_updates_channel_id",
+                        "preferred_locale")
+        json = make_json(options, allowed_keys)
         self.start_request(req, json=json)
         return req
 
-    def delete_guild(self, guild_id):
-        req = Request("DELETE", "/guilds/{guild_id}", guild_id=guild_id)
+    def delete_guild(self, guild):
+        req = Request("DELETE", "/guilds/{guild_id}", guild_id=guild.id)
         self.start_request(req)
         return req
 
-    def get_guild_channels(self, guild_id):
+    def get_guild_channels(self, guild):
         def _converter(data):
             channels = []
             for channel in data:
@@ -241,44 +283,110 @@ class HTTPClient:
 
             return channels
 
-        req = Request("GET", "/guilds/{guild_id}/channels", converter=_converter, guild_id=guild_id)
+        req = Request("GET", "/guilds/{guild_id}/channels",
+                      converter=_converter, guild_id=entity_or_id(guild))
         self.start_request(req)
         return req
 
-    def create_guild_channel(self):
-        pass
+    def create_guild_channel(self, guild, **options):
+        req = Request("POST", "/guilds/{guild_id}/channels",
+                      converter=self._entity_factory(Channel), guild_id=entity_or_id(guild))
 
-    def get_guild_members(self):
-        pass
+        allowed_keys = ("name", "type", "topic", "bitrate", "user_limit", "rate_limit_per_user", "position",
+                        "permission_overwrites", "parent_id", "nsfw")
+        converters = {
+            "permission_overwrites": lambda v: v  # TODO: actually convert
+        }
+        json = make_json(options, allowed_keys, converters)
+        self.start_request(req, json=json)
+        return req
 
-    def get_guild_member(self):
-        pass
+    def get_guild_members(self, guild, after=None):
+        def _converter(data):
+            members = []
+            for member in data:
+                e = Member(member)
+                e.fill_http(self)
+                members.append(e)
 
-    def edit_guild_member(self):
-        pass
+            return members
 
-    def remove_guild_member_role(self):
-        pass
+        req = Request("GET", "/guilds/{guild_id}/members",
+                      converter=_converter, guild_id=entity_or_id(guild))
+        self.start_request(req, params={"after": entity_or_id(after)})
+        return req
 
-    def add_guild_member_role(self):
-        pass
+    def get_guild_member(self, guild, user):
+        req = Request("GET", "/guilds/{guild_id}/members/{user_id}", converter=self._entity_factory(Member),
+                      guild_id=entity_or_id(guild), user_id=entity_or_id(user))
+        self.start_request(req)
+        return req
 
-    def remove_guild_member(self):
-        pass
+    def edit_guild_member(self, member, **options):
+        req = Request("PATCH", "/guilds/{guild_id}/members/{user_id}",
+                      guild_id=member.guild_id, user_id=member.id)
 
-    def get_guild_bans(self):
-        pass
+        allowed_keys = ("nick", "roles", "mute", "deaf", "channel_id")
+        converters = {
+            "roles": lambda rs: [entity_or_id(r) for r in rs]
+        }
+        json = make_json(options, allowed_keys, converters)
+        self.start_request(req, json=json)
+        return req
 
-    def get_guild_ban(self):
-        pass
+    def remove_guild_member_role(self, member, role):
+        req = Request("DELETE", "/guilds/{guild_id}/members/{user_id}/roles/{role_id}",
+                      guild_id=member.guild_id, user_id=member.id, role_id=entity_or_id(role))
 
-    def create_guild_ban(self):
-        pass
+        self.start_request(req)
+        return req
 
-    def remove_guild_ban(self):
-        pass
+    def add_guild_member_role(self, member, role):
+        req = Request("PUT", "/guilds/{guild_id}/members/{user_id}/roles/{role_id}",
+                      guild_id=member.guild_id, user_id=member.id, role_id=entity_or_id(role))
 
-    def get_guild_roles(self, guild_id):
+        self.start_request(req)
+        return req
+
+    def remove_guild_member(self, member):
+        req = Request("DELETE", "/guilds/{guild_id}/members/{user_id}",
+                      guild_id=member.guild_id, user_id=member.id)
+
+        self.start_request(req)
+        return req
+
+    def get_guild_bans(self, guild):
+        req = Request("GET", "/guilds/{guild_id}/bans",
+                      guild_id=entity_or_id(guild), converter=None)  # TODO: Create ban entity and converter
+
+        self.start_request(req)
+        return req
+
+    def get_guild_ban(self, guild, user):
+        req = Request("GET", "/guilds/{guild_id}/bans/{user_id}",
+                      guild_id=entity_or_id(guild), user_id=entity_or_id(user),
+                      converter=None)  # TODO: Create ban entity and converter
+
+        self.start_request(req)
+        return req
+
+    def create_guild_ban(self, guild, user, **options):
+        req = Request("PUT", "/guilds/{guild_id}/bans/{user_id}",
+                      guild_id=entity_or_id(guild), user_id=entity_or_id(user))
+
+        allowed_keys = ("delete_message_days", "reason")
+        json = make_json(options, allowed_keys)
+        self.start_request(req, json=json)
+        return req
+
+    def remove_guild_ban(self, guild, user):
+        req = Request("DELETE", "/guilds/{guild_id}/bans/{user_id}",
+                      guild_id=entity_or_id(guild), user_id=entity_or_id(user))
+
+        self.start_request(req)
+        return req
+
+    def get_guild_roles(self, guild):
         def _converter(data):
             roles = []
             for role in data:
@@ -288,11 +396,11 @@ class HTTPClient:
 
             return roles
 
-        req = Request("GET", "/guilds/{guild_id}/roles", converter=_converter, guild_id=guild_id)
+        req = Request("GET", "/guilds/{guild_id}/roles", converter=_converter, guild_id=entity_or_id(guild))
         self.start_request(req)
         return req
 
-    def create_guild_role(self):
+    def create_guild_role(self, guild, **options):
         pass
 
     def edit_guild_role(self):
@@ -304,8 +412,9 @@ class HTTPClient:
     def get_guild_invites(self):
         pass
 
-    def get_channel(self, channel_id):
-        req = Request("GET", "/channels/{channel_id}", converter=self._entity_factory(Channel), channel_id=channel_id)
+    def get_channel(self, channel):
+        req = Request("GET", "/channels/{channel_id}",
+                      converter=self._entity_factory(Channel), channel_id=entity_or_id(channel))
         self.start_request(req)
         return req
 
@@ -372,7 +481,13 @@ class HTTPClient:
     def get_user(self):
         pass
 
+    def get_me(self):
+        pass
+
     def edit_me(self):
+        pass
+
+    def create_dm(self):
         pass
 
     def create_webhook(self):
