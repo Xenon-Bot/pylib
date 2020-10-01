@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import IntEnum
 
 
 __all__ = (
@@ -13,7 +13,7 @@ __all__ = (
 )
 
 
-class ChannelType(Enum):
+class ChannelType(IntEnum):
     GUILD_TEXT = 0
     DM = 1
     GUILD_VOICE = 2
@@ -23,23 +23,23 @@ class ChannelType(Enum):
     GUILD_STORE = 6
 
 
-class DefaultMessageNotifications(Enum):
+class DefaultMessageNotifications(IntEnum):
     ALL_MESSAGES = 0
     ONLY_MENTIONS = 1
 
 
-class ExplicitContentFilter(Enum):
+class ExplicitContentFilter(IntEnum):
     DISABLED = 0
     MEMBERS_WITHOUT_ROLES = 1
     ALL_MEMBERS = 2
 
 
-class MFALevel(Enum):
+class MFALevel(IntEnum):
     NONE = 0
     ELEVATED = 1
 
 
-class VerificationLevel(Enum):
+class VerificationLevel(IntEnum):
     NONE = 0
     LOW = 1
     MEDIUM = 2
@@ -47,7 +47,7 @@ class VerificationLevel(Enum):
     VERY_HIGH = 4
 
 
-class MessageType(Enum):
+class MessageType(IntEnum):
     DEFAULT = 0
     RECIPIENT_ADD = 1
     RECIPIENT_REMOVE = 2
@@ -63,18 +63,18 @@ class MessageType(Enum):
     CHANNEL_FOLLOW_ADD = 12
 
 
-class WebhookType(Enum):
+class WebhookType(IntEnum):
     INCOMING = 1
     CHANNEL_FOLLOWER = 2
 
 
-class PremiumType(Enum):
+class PremiumType(IntEnum):
     NONE = 0
     NITRO_CLASSIC = 1
     NITRO = 2
 
 
-class PremiumTier(Enum):
+class PremiumTier(IntEnum):
     NONE = 0
     TIER_1 = 1
     TIER_2 = 2
