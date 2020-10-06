@@ -41,31 +41,24 @@ class Relay:
         if self._reader_task is None:
             self._reader_task = self.loop.create_task(self._reader())
 
-    async def subscribe(self, *channels):
-        await self.redis.subscribe(*[self._mpsc.channel(c) for c in channels])
+    async def subscribe(self, *channels, pattern=False):
+        channel_factory = self._mpsc.channel if not pattern else self._mpsc.pattern
+        await self.redis.subscribe(*[channel_factory(c) for c in channels])
         self.start_reader()
         async for channel, msg in self._iter():
             if channel.name.decode("utf-8") in channels:
                 yield channel, msg
 
-    async def unsubscribe(self, *channels):
-        await self.redis.unsubscribe(*[self._mpsc.channel(c) for c in channels])
-
-    async def psubscribe(self, *channels):
-        await self.redis.subscribe(*[self._mpsc.pattern(c) for c in channels])
-        self.start_reader()
-        async for channel, msg in self._iter():
-            if channel.name.decode("utf-8") in channels:
-                yield channel, msg
-
-    async def punsubscribe(self, *channels):
-        await self.redis.punsubscribe(*[self._mpsc.pattern(c) for c in channels])
+    async def unsubscribe(self, *channels, pattern=False):
+        channel_factory = self._mpsc.channel if not pattern else self._mpsc.pattern
+        await self.redis.unsubscribe(*[channel_factory(c) for c in channels])
 
     async def publish(self, channel, data):
         await self.redis.publish(channel, data)
 
-    async def subscribe_compete(self, *channels):
-        await self.redis.subscribe(*[self._mpsc.channel(c) for c in channels])
+    async def subscribe_compete(self, *channels, pattern=False):
+        channel_factory = self._mpsc.channel if not pattern else self._mpsc.pattern
+        await self.redis.subscribe(*[channel_factory(c) for c in channels])
         self.start_reader()
         async for channel, msg in self._iter():
             channel_name = channel.name.decode("utf-8")
@@ -112,3 +105,15 @@ class Relay:
                     return tuple(res)
         finally:
             await self.unsubscribe(f"rpc:{nonce}")
+
+    async def provide_service(self, service):
+        tasks = []
+
+        for rpc in service.rpc_list:
+            tasks.append(self.loop.create_task(self.provide_rpc(
+                f"{service.name}:{rpc.name}",
+                rpc.callable
+            )))
+
+        if len(tasks) > 0:
+            return await asyncio.wait(tasks, return_when=asyncio.FIRST_EXCEPTION)
