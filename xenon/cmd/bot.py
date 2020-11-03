@@ -3,6 +3,8 @@ import asyncio
 import inspect
 import ed25519
 import json
+import traceback
+import sys
 
 from .. import rest
 from ..entities import Snowflake
@@ -37,6 +39,14 @@ class Bot:
         for cmd in self._commands:
             if command_id == cmd.id:
                 return await cmd.execute(data)
+
+    async def command_error(self, ctx, e):
+        tb = "".join(traceback.format_exception(type(e), e, e.__traceback__))
+        print(tb, file=sys.stderr)
+        return InteractionResponse.respond_and_eat(
+            content=f"__**Unexpected Error**__```py\n{e.__class__.__name__}:\n{str(tb)}```",
+            ephemeral=True
+        )
 
     async def webhook_entry(self, req):
         raw_data = await req.read()
@@ -82,24 +92,29 @@ class Bot:
         cmd.bot = None
         self._commands.remove(cmd)
 
-    def command(self, _callable, **kwargs):
-        def _construct_command(_callback, **kwargs):
-            return Command(
-                name=kwargs.get("name", _callback.__name__),
-                description=kwargs.get("description", inspect.getdoc(_callback)),
-                callable=_callable,
-                options=kwargs.get("options", inspect_options(_callable)),
-                **kwargs
-            )
+    def add_module(self, module):
+        for cmd in module.commands:
+            self.add_command(cmd)
 
-        if _callable is not None:
-            cmd = _construct_command(_callable, **kwargs)
+        for task in module.tasks:
+            task.start(self.loop)
+
+    def remove_module(self, module):
+        for cmd in module.commands:
+            self.remove_command(cmd)
+
+        for task in module.tasks:
+            task.stop()
+
+    def command(self, _next, **kwargs):
+        if _next is not None:
+            cmd = construct_command(_next, **kwargs)
             self.add_command(cmd)
             return cmd
 
         else:
-            def predicate(_callback):
-                cmd = _construct_command(_callable, **kwargs)
+            def predicate(_next):
+                cmd = construct_command(_next, **kwargs)
                 self.add_command(cmd)
                 return cmd
 

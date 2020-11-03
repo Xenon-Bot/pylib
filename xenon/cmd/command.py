@@ -1,9 +1,15 @@
 from abc import ABC
 import inspect
+import asyncio
+import types
+
+from .. import rest
 
 from .enums import *
 from .data import *
 from .util import *
+from .converter import *
+from .checks import *
 
 
 __all__ = (
@@ -13,7 +19,9 @@ __all__ = (
     "SubCommand",
     "SubCommandGroup",
     "Choice",
-    "Converter"
+    "Converter",
+    "inspect_checks",
+    "construct_command"
 )
 
 
@@ -24,7 +32,7 @@ def inspect_options(_callable):
 
     options = []
     for p in list(inspect.signature(_callable).parameters.values())[skip:]:
-        converter = p.annotation if p.annotation != inspect.Parameter.empty else None
+        converter = p.annotation if p.annotation != inspect.Parameter.empty else str
         _type = CommandOptionType.STRING
         choices = []
         if converter == int:
@@ -37,7 +45,9 @@ def inspect_options(_callable):
             for choice in converter:
                 choices.append(Choice(name="placeholder", value=choice))
 
-        elif isinstance(converter, Converter):
+            converter = str
+
+        elif inspect.isclass(converter) and issubclass(converter, Converter):
             _type = converter.type
 
         options.append(Option(
@@ -53,21 +63,46 @@ def inspect_options(_callable):
     return options
 
 
-def _construct_sub_command(_callable, **kwargs):
-    return SubCommand(
+def inspect_checks(_next):
+    checks = []
+    while isinstance(_next, Check):
+        checks.append(_next)
+        _next = _next.next
+
+    return _next, checks
+
+
+def construct_command(_next, **kwargs):
+    _callable, checks = inspect_checks(_next)
+    return Command(
         name=kwargs.get("name", _callable.__name__),
         description=kwargs.get("description", inspect.getdoc(_callable)),
         callable=_callable,
+        checks=checks,
         options=kwargs.get("options", inspect_options(_callable)),
         **kwargs
     )
 
 
-def _construct_sub_group(_callable, **kwargs):
+def _construct_sub_command(_next, **kwargs):
+    _callable, checks = inspect_options(_next)
+    return SubCommand(
+        name=kwargs.get("name", _callable.__name__),
+        description=kwargs.get("description", inspect.getdoc(_callable)),
+        callable=_callable,
+        checks=checks,
+        options=kwargs.get("options", inspect_options(_callable)),
+        **kwargs
+    )
+
+
+def _construct_sub_group(_next, **kwargs):
+    _callable, checks = inspect_options(_next)
     return SubCommandGroup(
         name=kwargs.get("name", _callable.__name__),
         description=kwargs.get("description", inspect.getdoc(_callable)),
         callable=_callable,
+        checks=checks,
         options=kwargs.get("options", inspect_options(_callable)),
         **kwargs
     )
@@ -93,68 +128,94 @@ class Command:
             "options": [dict(o) for o in self.options]
         }.items()
 
-    def sub_command(self, _callable, **kwargs):
-        if _callable is not None:
-            opt = _construct_sub_command(_callable, parent=self, **kwargs)
+    def bind(self, obj):
+        self.options.pop(0)  # Options have to be shifted to respect the self parameter
+        self.callable = types.MethodType(self.callable, obj)
+
+    def sub_command(self, _next, **kwargs):
+        if _next is not None:
+            opt = _construct_sub_command(_next, parent=self, **kwargs)
             self.options.append(opt)
             return opt
 
         else:
-            def predicate(_callback):
-                opt = _construct_sub_command(_callable, parent=self, **kwargs)
+            def predicate(_next):
+                opt = _construct_sub_command(_next, parent=self, **kwargs)
                 self.options.append(opt)
                 return opt
 
             return predicate
 
-    def sub_group(self, _callable, **kwargs):
-        if _callable is not None:
-            opt = _construct_sub_group(_callable, parent=self, **kwargs)
+    def sub_group(self, _next, **kwargs):
+        if _next is not None:
+            opt = _construct_sub_group(_next, parent=self, **kwargs)
             self.options.append(opt)
             return opt
 
         else:
-            def predicate(_callback):
-                opt = _construct_sub_group(_callable, parent=self, **kwargs)
+            def predicate(_next):
+                opt = _construct_sub_group(_next, parent=self, **kwargs)
                 self.options.append(opt)
                 return opt
 
             return predicate
 
     async def execute(self, data):
-        outdated_resp = InteractionResponse.eat_cmd(
+        outdated_resp = InteractionResponse.respond_and_eat(
             content="Discords command cache seems to be outdated, you might have to wait up to one hour ...",
             ephemeral=True
         )
-        ctx = None
+        ctx = Context(data, self)
 
-        options = []
-        for option in data.data.options:
-            match = list_get(self.options, name=option.name)
-            if match is None:
-                return outdated_resp
+        async def _wrapped_callable(_callable):
+            try:
+                result = await _callable
+                if not ctx.future.done():
+                    ctx.future.set_result(result)
 
-            if isinstance(match, SubCommand):
-                sub_options = []
-                for inner_option in option.options:
-                    inner_match = list_get(match.options, name=inner_option.name)
-                    if inner_match is None:
-                        return outdated_resp
+            except Exception as e:
+                if not ctx.future.done():
+                    ctx.future.set_exception(e)
 
-                    # TODO: Run converters
-                    sub_options.append(inner_option.value)
+                else:
+                    raise e
 
-                return await match.callable(ctx, *sub_options)
+        try:
+            options = []
+            for option in data.data.options:
+                match = list_get(self.options, name=option.name)
+                if match is None:
+                    return outdated_resp
 
-            if isinstance(match, SubCommandGroup):
-                # TODO: Recursive option discovery
-                pass
+                if isinstance(match, SubCommand):
+                    sub_options = []
+                    for inner_option in option.options:
+                        inner_match = list_get(match.options, name=inner_option.name)
+                        if inner_match is None:
+                            return outdated_resp
 
-            else:
-                # TODO: Run converters
-                options.append(option.value)
+                        sub_options.append(inner_match.converter(inner_option.value))
 
-        return await self.callable(ctx, *options)
+                    for check in match.checks:
+                        await check.run(ctx, *sub_options)
+
+                    self.bot.loop.create_task(_wrapped_callable(match.callable(ctx, *sub_options)))
+                    return await ctx.future
+
+                if isinstance(match, SubCommandGroup):
+                    # TODO: Recursive option discovery
+                    pass
+
+                else:
+                    options.append(match.converter(option.value))
+
+            for check in self.checks:
+                await check.run(ctx, *options)
+
+            self.bot.loop.create_task(_wrapped_callable(self.callable(ctx, *options)))
+            return await ctx.future
+        except Exception as e:
+            return await self.bot.command_error(ctx, e)
 
 
 class BaseOption(ABC):
@@ -208,6 +269,8 @@ class SubCommand(BaseOption):
         self.callable = kwargs.get("callable")
         self.parent = kwargs.get("parent")
 
+        self.checks = kwargs.get("checks")
+
     def __iter__(self):
         yield from super().__iter__()
         yield "options", [dict(o) for o in self.options]
@@ -221,6 +284,8 @@ class SubCommandGroup(BaseOption):
         self.callable = kwargs.get("callable")
         self.parent = kwargs.get("parent")
 
+        self.checks = kwargs.get("checks")
+
     def __iter__(self):
         yield from super().__iter__()
         yield "options", [dict(o) for o in self.options]
@@ -232,7 +297,7 @@ class SubCommandGroup(BaseOption):
             return opt
 
         else:
-            def predicate(_callback):
+            def predicate(_next):
                 opt = _construct_sub_command(_callable, **kwargs)
                 self.options.append(opt)
                 return opt
@@ -240,11 +305,61 @@ class SubCommandGroup(BaseOption):
             return predicate
 
 
-class Converter:
-    type: CommandOptionType
-
-
 class Context:
-    async def respond(self):
-        # edit existing one or make new one
-        pass
+    def __init__(self, data, cmd):
+        self.data = data
+        self.cmd = cmd
+
+        self.future = asyncio.Future()
+
+    @property
+    def member(self):
+        return self.data.member
+
+    @property
+    def author(self):
+        return self.data.member
+
+    @property
+    def bot(self):
+        return self.cmd.bot
+
+    @property
+    def token(self):
+        return self.data.token
+
+    async def ack(self):
+        if not self.future.done():
+            self.future.set_result(InteractionResponse.ack())
+
+    async def respond_and_eat(self, **data):
+        response = InteractionResponse(InteractionResponseType.CHANNEL_MESSAGE, data)
+        if not self.future.done():
+            self.future.set_result(response)
+
+        else:
+            req = rest.Request("POST",
+                               "/webhooks/{application_id}/{token}",
+                               application_id=self.bot.user.id, token=self.token)
+            self.bot.http.start_request(req, json=response.data)
+            return await req
+
+    async def respond(self, **data):
+        response = InteractionResponse(InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE, data)
+        if not self.future.done():
+            self.future.set_result(response)
+
+        else:
+            req = rest.Request("POST",
+                               "/webhooks/{application_id}/{token}",
+                               application_id=self.bot.user.id, token=self.token)
+            self.bot.http.start_request(req, json=response.data)
+            return await req
+
+    async def edit_response(self, message_id="@original", **data):
+        response = InteractionResponse(InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE, data)
+        req = rest.Request("PATCH",
+                           "/webhooks/{application_id}/{token}/messages/{message_id}",
+                           application_id=self.bot.user.id, token=self.token, message_id=message_id)
+        self.bot.http.start_request(req, json=response.data)
+        return await req

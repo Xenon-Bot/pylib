@@ -95,11 +95,11 @@ class InteractionResponse:
         return cls(InteractionResponseType.ACKNOWLEDGE)
 
     @classmethod
-    def eat_cmd(cls, **data):
+    def respond_and_eat(cls, **data):
         return cls(InteractionResponseType.CHANNEL_MESSAGE, data)
 
     @classmethod
-    def keep_cmd(cls, **data):
+    def respond(cls, **data):
         return cls(InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE, data)
 
     def __iter__(self):
