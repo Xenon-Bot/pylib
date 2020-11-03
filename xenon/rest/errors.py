@@ -1,6 +1,6 @@
-import orjson
+import json
 
-from errors import XenonException
+from ..errors import XenonException
 
 
 __all__ = (
@@ -20,7 +20,7 @@ class HTTPException(XenonException):
             base = message.get("message", "")
             errors = message.get("errors")
             if errors is not None:
-                self.text = f"{base}\n{orjson.dumps(errors)}"
+                self.text = f"{base}\n{json.dumps(errors)}"
 
             else:
                 self.text = base
@@ -29,7 +29,7 @@ class HTTPException(XenonException):
             self.text = message
             self.code = 0
 
-        fmt = '{0.status} {0.reason} (error code: {1})'
+        fmt = '{0.status} {0.reason} (error code: {1}): {2}'
         super().__init__(fmt.format(self.response, self.code, self.text))
 
 

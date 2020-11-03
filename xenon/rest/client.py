@@ -4,8 +4,8 @@ from urllib.parse import quote as urlquote
 import aiohttp
 from enum import Enum
 
-from entities import *
-from flags import *
+from ..entities import *
+from ..flags import *
 from .ratelimits import *
 from .errors import *
 
@@ -204,6 +204,9 @@ class HTTPClient:
             elif resp.status == 400:
                 req.set_exception(HTTPNotFound(resp, data))
 
+            elif resp.status in (401,):
+                req.set_exception(HTTPException(resp, data))
+
             else:
                 raise HTTPException(resp, data)
 
@@ -222,8 +225,8 @@ class HTTPClient:
                 for file in files:
                     file.reset()
 
-            await self._check_ratelimits(req)
             try:
+                await self._check_ratelimits(req)
                 await self._perform_request(req, **kwargs)
                 break
             except HTTPException as e:
@@ -235,14 +238,6 @@ class HTTPClient:
         else:
             req.set_exception(last_error)
 
-    def _entity_factory(self, cls):
-        def _predicate(data):
-            e = cls(data)
-            e.fill_http(self)
-            return e
-
-        return _predicate
-
     def start_request(self, req, **kwargs):
         if self._session is None:
             self._session = aiohttp.ClientSession(loop=self.loop)
@@ -252,13 +247,13 @@ class HTTPClient:
 
     def get_guild(self, guild):
         req = Request("GET", "/guilds/{guild_id}",
-                      converter=self._entity_factory(Guild), guild_id=entity_or_id(guild))
+                      converter=Guild, guild_id=entity_or_id(guild))
         self.start_request(req)
         return req
 
     def edit_guild(self, guild, **options):
         req = Request("PATCH", "/guilds/{guild_id}",
-                      converter=self._entity_factory(Guild), guild_id=entity_or_id(guild))
+                      converter=Guild, guild_id=entity_or_id(guild))
 
         allowed_keys = ("name", "region", "verification_level", "default_message_notifications",
                         "explicit_content_filter", "afk_channel_id", "adk_timeout", "icon", "owner_id",
@@ -275,13 +270,7 @@ class HTTPClient:
 
     def get_guild_channels(self, guild):
         def _converter(data):
-            channels = []
-            for channel in data:
-                e = Channel(channel)
-                e.fill_http(self)
-                channels.append(e)
-
-            return channels
+            return [Channel(c) for c in data]
 
         req = Request("GET", "/guilds/{guild_id}/channels",
                       converter=_converter, guild_id=entity_or_id(guild))
@@ -290,7 +279,7 @@ class HTTPClient:
 
     def create_guild_channel(self, guild, **options):
         req = Request("POST", "/guilds/{guild_id}/channels",
-                      converter=self._entity_factory(Channel), guild_id=entity_or_id(guild))
+                      converter=Guild, guild_id=entity_or_id(guild))
 
         allowed_keys = ("name", "type", "topic", "bitrate", "user_limit", "rate_limit_per_user", "position",
                         "permission_overwrites", "parent_id", "nsfw")
@@ -303,13 +292,7 @@ class HTTPClient:
 
     def get_guild_members(self, guild, after=None):
         def _converter(data):
-            members = []
-            for member in data:
-                e = Member(member)
-                e.fill_http(self)
-                members.append(e)
-
-            return members
+            return [Member(m) for m in data]
 
         req = Request("GET", "/guilds/{guild_id}/members",
                       converter=_converter, guild_id=entity_or_id(guild))
@@ -317,7 +300,7 @@ class HTTPClient:
         return req
 
     def get_guild_member(self, guild, user):
-        req = Request("GET", "/guilds/{guild_id}/members/{user_id}", converter=self._entity_factory(Member),
+        req = Request("GET", "/guilds/{guild_id}/members/{user_id}", converter=Member,
                       guild_id=entity_or_id(guild), user_id=entity_or_id(user))
         self.start_request(req)
         return req
@@ -388,13 +371,7 @@ class HTTPClient:
 
     def get_guild_roles(self, guild):
         def _converter(data):
-            roles = []
-            for role in data:
-                e = Role(role)
-                e.fill_http(self)
-                roles.append(e)
-
-            return roles
+            return [Role(r) for r in data]
 
         req = Request("GET", "/guilds/{guild_id}/roles", converter=_converter, guild_id=entity_or_id(guild))
         self.start_request(req)
@@ -414,7 +391,7 @@ class HTTPClient:
 
     def get_channel(self, channel):
         req = Request("GET", "/channels/{channel_id}",
-                      converter=self._entity_factory(Channel), channel_id=entity_or_id(channel))
+                      converter=Channel, channel_id=entity_or_id(channel))
         self.start_request(req)
         return req
 
@@ -482,7 +459,9 @@ class HTTPClient:
         pass
 
     def get_me(self):
-        pass
+        req = Request("GET", "/users/@me", converter=User)
+        self.start_request(req)
+        return req
 
     def edit_me(self):
         pass
