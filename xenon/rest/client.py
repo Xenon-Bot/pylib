@@ -169,8 +169,8 @@ class HTTPClient:
                 remaining = resp.headers.get('X-Ratelimit-Remaining')
                 reset_after = resp.headers.get('X-Ratelimit-Reset-After')
                 if remaining is not None and reset_after is not None:
-                    req.ratelimit = Ratelimit(reset_after, remaining)
-                    await self._ratelimits.set_bucket(req.bucket, reset_after, remaining)
+                    req.ratelimit = Ratelimit(float(reset_after), int(remaining))
+                    await self._ratelimits.set_bucket(req.bucket, float(reset_after), int(remaining))
 
                 req.set_data(data)
 
