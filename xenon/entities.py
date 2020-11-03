@@ -1,8 +1,8 @@
 from datetime import datetime
 import re
 
-from enums import *
-from flags import *
+from .enums import *
+from .flags import *
 
 __all__ = (
     "Entity",
@@ -67,12 +67,6 @@ class Entity:
     @property
     def created_at(self):
         return datetime.utcfromtimestamp(((int(self.id) >> 22) + DISCORD_EPOCH) / 1000)
-
-    def fill_http(self, http):
-        self._http = http
-
-    def fill_bridge(self, bridge):
-        self._bridge = bridge
 
 
 class Snowflake(Entity):
@@ -203,10 +197,10 @@ class Guild(PartialGuild):
 
         return Asset(self._http, f"banners/{self.id}/{self.banner}.{fmt}")
 
-    async def fetch_channels(self):
+    async def fetch_channels(self, http):
         pass
 
-    async def fetch_member(self):
+    async def fetch_member(self, http):
         pass
 
 
