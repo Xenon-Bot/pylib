@@ -44,7 +44,10 @@ class CommandInteractionData(Entity):
         super().__init__()
         self.id = data["id"]
         self.name = data["name"]
-        self.options = data["options"]
+        self.options = [
+            CommandInteractionDataOption(o)
+            for o in data.get("options", [])
+        ]
 
     def __iter__(self):
         yield from {
@@ -61,8 +64,8 @@ class CommandInteractionDataOption:
         self.name = data["name"]
         self.value = data.get("value")
         self.options = [
-            CommandInteractionData(d)
-            for d in data.get("options", [])
+            CommandInteractionDataOption(o)
+            for o in data.get("options", [])
         ]
 
     def __iter__(self):
@@ -76,7 +79,16 @@ class CommandInteractionDataOption:
 class InteractionResponse:
     def __init__(self, type, data=None):
         self.type = type
+
+        if data is not None:
+            ephemeral = data.pop("ephemeral", False)
+            data["flags"] = 0 if not ephemeral else 1 << 6
+
         self.data = data
+
+    @classmethod
+    def pong(cls):
+        return cls(InteractionResponseType.PONG)
 
     @classmethod
     def ack(cls):

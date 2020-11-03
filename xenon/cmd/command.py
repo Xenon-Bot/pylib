@@ -2,6 +2,8 @@ from abc import ABC
 import inspect
 
 from .enums import *
+from .data import *
+from .util import *
 
 
 __all__ = (
@@ -56,7 +58,8 @@ def _construct_sub_command(_callable, **kwargs):
         name=kwargs.get("name", _callable.__name__),
         description=kwargs.get("description", inspect.getdoc(_callable)),
         callable=_callable,
-        options=kwargs.get("options", inspect_options(_callable))
+        options=kwargs.get("options", inspect_options(_callable)),
+        **kwargs
     )
 
 
@@ -65,7 +68,8 @@ def _construct_sub_group(_callable, **kwargs):
         name=kwargs.get("name", _callable.__name__),
         description=kwargs.get("description", inspect.getdoc(_callable)),
         callable=_callable,
-        options=kwargs.get("options", inspect_options(_callable))  # TODO: construct options
+        options=kwargs.get("options", inspect_options(_callable)),
+        **kwargs
     )
 
 
@@ -77,8 +81,9 @@ class Command:
         self.options = kwargs.get("options", [])
 
         self.callable = kwargs.get("callable")
-
         self.checks = kwargs.get("checks", [])
+
+        self.bot = kwargs.get("bot")
 
     def __iter__(self):
         yield from {
@@ -90,13 +95,13 @@ class Command:
 
     def sub_command(self, _callable, **kwargs):
         if _callable is not None:
-            opt = _construct_sub_command(_callable, **kwargs)
+            opt = _construct_sub_command(_callable, parent=self, **kwargs)
             self.options.append(opt)
             return opt
 
         else:
             def predicate(_callback):
-                opt = _construct_sub_command(_callable, **kwargs)
+                opt = _construct_sub_command(_callable, parent=self, **kwargs)
                 self.options.append(opt)
                 return opt
 
@@ -104,17 +109,52 @@ class Command:
 
     def sub_group(self, _callable, **kwargs):
         if _callable is not None:
-            opt = _construct_sub_group(_callable, **kwargs)
+            opt = _construct_sub_group(_callable, parent=self, **kwargs)
             self.options.append(opt)
             return opt
 
         else:
             def predicate(_callback):
-                opt = _construct_sub_group(_callable, **kwargs)
+                opt = _construct_sub_group(_callable, parent=self, **kwargs)
                 self.options.append(opt)
                 return opt
 
             return predicate
+
+    async def execute(self, data):
+        outdated_resp = InteractionResponse.eat_cmd(
+            content="Discords command cache seems to be outdated, you might have to wait up to one hour ...",
+            ephemeral=True
+        )
+        ctx = None
+
+        options = []
+        for option in data.data.options:
+            match = list_get(self.options, name=option.name)
+            if match is None:
+                return outdated_resp
+
+            if isinstance(match, SubCommand):
+                sub_options = []
+                for inner_option in option.options:
+                    inner_match = list_get(match.options, name=inner_option.name)
+                    if inner_match is None:
+                        return outdated_resp
+
+                    # TODO: Run converters
+                    sub_options.append(inner_option.value)
+
+                return await match.callable(ctx, *sub_options)
+
+            if isinstance(match, SubCommandGroup):
+                # TODO: Recursive option discovery
+                pass
+
+            else:
+                # TODO: Run converters
+                options.append(option.value)
+
+        return await self.callable(ctx, *options)
 
 
 class BaseOption(ABC):
@@ -166,6 +206,7 @@ class SubCommand(BaseOption):
         self.type = CommandOptionType.SUB_COMMAND
         self.options = kwargs.get("options", [])
         self.callable = kwargs.get("callable")
+        self.parent = kwargs.get("parent")
 
     def __iter__(self):
         yield from super().__iter__()
@@ -178,6 +219,7 @@ class SubCommandGroup(BaseOption):
         self.type = CommandOptionType.SUB_COMMAND_GROUP
         self.options = kwargs.get("options", [])
         self.callable = kwargs.get("callable")
+        self.parent = kwargs.get("parent")
 
     def __iter__(self):
         yield from super().__iter__()
@@ -200,3 +242,9 @@ class SubCommandGroup(BaseOption):
 
 class Converter:
     type: CommandOptionType
+
+
+class Context:
+    async def respond(self):
+        # edit existing one or make new one
+        pass

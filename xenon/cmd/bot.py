@@ -1,6 +1,8 @@
 from aiohttp import web
 import asyncio
 import inspect
+import ed25519
+import json
 
 from .. import rest
 from ..entities import Snowflake
@@ -22,42 +24,63 @@ class Bot:
     def __init__(self, **kwargs):
         self.loop = kwargs.get("loop", asyncio.get_event_loop())
         self.http = kwargs.get("http")
+        self.public_key = ed25519.VerifyingKey(kwargs.get("public_key"), encoding="hex")
         self.user = None
 
-        self._loaded_commands = []
-        self.commands = []
+        self._commands = []
 
         self._web = web.Application()
         self._web.add_routes([web.post("/webh", self.webhook_entry)])
-        self._runner = None
 
     async def command_received(self, data):
-        pass
+        command_id = data.data.id
+        for cmd in self._commands:
+            if command_id == cmd.id:
+                return await cmd.execute(data)
 
     async def webhook_entry(self, req):
-        data = InteractionData(await req.json())
-        if data.type == InteractionType.PING:
-            return web.json_response({"type": InteractionResponseType.PONG})
+        raw_data = await req.read()
+        print(json.dumps(json.loads(raw_data), indent=2))
+        signature = req.headers.get("x-signature-ed25519")
+        if signature is None:
+            return web.HTTPUnauthorized()
 
-        elif data.type == InteractionType.APPLICATION_COMMAND:
-            return await self.command_received(data)
+        try:
+            self.public_key.verify(signature, raw_data, encoding="hex")
+        except ed25519.BadSignatureError:
+            return web.HTTPUnauthorized()
+
+        data = InteractionData(json.loads(raw_data))
+        response = InteractionResponse.pong()
+        if data.type == InteractionType.APPLICATION_COMMAND:
+            response = await self.command_received(data)
+
+        return web.json_response(dict(response))
 
     async def start(self, *args, **kwargs):
         self.user = await self.http.get_me()
         await self.load_commands()
 
-        runner = web.AppRunner(self._web)
+        self._web.runner = runner = web.AppRunner(self._web)
         await runner.setup()
         site = web.TCPSite(runner, *args, **kwargs)
         await site.start()
 
     async def stop(self):
-        if self._runner is not None:
-            await self._runner.cleanup()
+        if self._web.runner is not None:
+            await self._web.runner.cleanup()
 
     def run(self, *args, **kwargs):
         self.loop.create_task(self.start(*args, **kwargs))
         self.loop.run_forever()
+
+    def add_command(self, cmd):
+        cmd.bot = self
+        self._commands.append(cmd)
+
+    def remove_command(self, cmd):
+        cmd.bot = None
+        self._commands.remove(cmd)
 
     def command(self, _callable, **kwargs):
         def _construct_command(_callback, **kwargs):
@@ -65,18 +88,19 @@ class Bot:
                 name=kwargs.get("name", _callback.__name__),
                 description=kwargs.get("description", inspect.getdoc(_callback)),
                 callable=_callable,
-                options=kwargs.get("options", inspect_options(_callable))
+                options=kwargs.get("options", inspect_options(_callable)),
+                **kwargs
             )
 
         if _callable is not None:
             cmd = _construct_command(_callable, **kwargs)
-            self.commands.append(cmd)
+            self.add_command(cmd)
             return cmd
 
         else:
             def predicate(_callback):
                 cmd = _construct_command(_callable, **kwargs)
-                self.commands.append(cmd)
+                self.add_command(cmd)
                 return cmd
 
             return predicate
@@ -91,10 +115,7 @@ class Bot:
                            application_id=self.user.id, command_id=cmd.id)
         self.http.start_request(req)
         result = await req
-        try:
-            self._loaded_commands.remove(cmd)
-        except ValueError:
-            pass
+        cmd.id = None
         return result
 
     async def register_command(self, cmd):
@@ -103,7 +124,6 @@ class Bot:
         self.http.start_request(req, json=dict(cmd))
         result = await req
         cmd.id = result["id"]
-        self._loaded_commands.append(cmd)
         return result
 
     async def update_command(self, command_id, cmd):
@@ -112,12 +132,11 @@ class Bot:
         self.http.start_request(req, json=dict(cmd))
         result = await req
         cmd.id = result["id"]
-        self._loaded_commands.append(cmd)
         return result
 
     async def load_commands(self):
         existing = await self.fetch_commands()
-        for cmd in self.commands:
+        for cmd in filter(lambda c: c.id is None, self._commands):
             for i, ex_cmd in enumerate(existing):
                 if cmd.name == ex_cmd["name"]:
                     await self.update_command(ex_cmd["id"], cmd)
