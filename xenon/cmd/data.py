@@ -1,14 +1,11 @@
-from entities import *
+from ..entities import *
 from .enums import *
-
 
 __all__ = (
     "InteractionData",
     "CommandInteractionData",
     "CommandInteractionDataOption",
-    "Command",
-    "CommandOption",
-    "CommandOptionChoice"
+    "InteractionResponse"
 )
 
 
@@ -76,60 +73,23 @@ class CommandInteractionDataOption:
         }
 
 
-class Command(Entity):
-    __slots__ = ("application_id", "name", "description", "options")
+class InteractionResponse:
+    def __init__(self, type, data=None):
+        self.type = type
+        self.data = data
 
-    def __init__(self, data):
-        super().__init__()
-        self.id = data["id"]
-        self.application_id = data["application_id"]
-        self.name = data["name"]
-        self.description = data["description"]
-        self.options = [CommandOption(o) for o in data["options"]]
+    @classmethod
+    def ack(cls):
+        return cls(InteractionResponseType.ACKNOWLEDGE)
 
-    def __iter__(self):
-        yield from {
-            "id": self.id,
-            "application_id": self.application_id,
-            "name": self.name,
-            "description": self.description,
-            "options": [dict(o) for o in self.options]
-        }
+    @classmethod
+    def eat_cmd(cls, **data):
+        return cls(InteractionResponseType.CHANNEL_MESSAGE, data)
 
-
-class CommandOption:
-    __slots__ = ("type", "name", "description", "default", "required", "choices", "options")
-
-    def __init__(self, data):
-        self.type = CommandOptionType(data["type"])
-        self.name = data["name"]
-        self.description = data["description"]
-        self.default = data["default"]
-        self.required = data["required"]
-        self.choices = [CommandOptionChoice(c) for c in data["choices"]]
-        self.options = [CommandOption(o) for o in data.get("options", [])]
+    @classmethod
+    def keep_cmd(cls, **data):
+        return cls(InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE, data)
 
     def __iter__(self):
-        yield from {
-            "type": self.type.value,
-            "name": self.name,
-            "description": self.description,
-            "default": self.default,
-            "required": self.required,
-            "choices": [dict(c) for c in self.choices],
-            "options": [dict(o) for o in self.options]
-        }
-
-
-class CommandOptionChoice:
-    __slots__ = ("name", "value")
-
-    def __init__(self, data):
-        self.name = data["name"]
-        self.value = data["value"]
-
-    def __iter__(self):
-        yield from {
-            "name": self.name,
-            "value": self.value
-        }
+        yield "type", self.type.value
+        yield "data", self.data
