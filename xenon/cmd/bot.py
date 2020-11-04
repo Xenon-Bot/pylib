@@ -19,9 +19,6 @@ __all__ = (
 )
 
 
-# help command could use choices for command names
-
-
 class Bot:
     def __init__(self, **kwargs):
         self.loop = kwargs.get("loop", asyncio.get_event_loop())
@@ -83,6 +80,10 @@ class Bot:
     def run(self, *args, **kwargs):
         self.loop.create_task(self.start(*args, **kwargs))
         self.loop.run_forever()
+
+    @property
+    def commands(self):
+        return self._commands
 
     def add_command(self, cmd):
         cmd.bot = self

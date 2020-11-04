@@ -25,7 +25,8 @@ __all__ = (
 )
 
 
-def inspect_options(_callable):
+def inspect_options(_callable, descriptions=None):
+    descriptions = descriptions or {}
     skip = 1
     if inspect.ismethod(_callable):
         skip += 1
@@ -53,7 +54,7 @@ def inspect_options(_callable):
         options.append(Option(
             type=_type,
             name=p.name,
-            description="placeholder",
+            description=descriptions.get(p.name, "No description"),
             default=False,
             required=p.default == inspect.Parameter.empty,
             choices=choices,
@@ -72,38 +73,64 @@ def inspect_checks(_next):
     return _next, checks
 
 
+def parse_docstring(doc):
+    description = doc.splitlines()[0]
+    long_description = ""
+    options = {}
+    in_args = False
+    for line in doc.splitlines():
+        if line == "---":
+            in_args = not in_args
+
+        elif in_args:
+            name, desc = line.split("->")
+            options[name.strip()] = desc.strip()
+            long_description += f"**{name.strip()}**: *{desc.strip()}*\n"
+
+        else:
+            long_description += f"{line}\n"
+
+    return description, long_description, options
+
+
 def construct_command(_next, **kwargs):
     _callable, checks = inspect_checks(_next)
+    parsed_doc = parse_docstring(kwargs.get("description", inspect.getdoc(_callable)))
     return Command(
         name=kwargs.get("name", _callable.__name__),
-        description=kwargs.get("description", inspect.getdoc(_callable)),
+        description=parsed_doc[0],
         callable=_callable,
         checks=checks,
-        options=kwargs.get("options", inspect_options(_callable)),
+        options=kwargs.get("options", inspect_options(_callable, parsed_doc[2])),
+        help_text=parsed_doc[1],
         **kwargs
     )
 
 
 def _construct_sub_command(_next, **kwargs):
-    _callable, checks = inspect_options(_next)
+    _callable, checks = inspect_checks(_next)
+    parsed_doc = parse_docstring(kwargs.get("description", inspect.getdoc(_callable)))
     return SubCommand(
         name=kwargs.get("name", _callable.__name__),
-        description=kwargs.get("description", inspect.getdoc(_callable)),
+        description=parsed_doc[0],
         callable=_callable,
         checks=checks,
-        options=kwargs.get("options", inspect_options(_callable)),
+        options=kwargs.get("options", inspect_options(_callable, parsed_doc[2])),
+        help_text=parsed_doc[1],
         **kwargs
     )
 
 
 def _construct_sub_group(_next, **kwargs):
     _callable, checks = inspect_options(_next)
+    parsed_doc = parse_docstring(kwargs.get("description", inspect.getdoc(_callable)))
     return SubCommandGroup(
         name=kwargs.get("name", _callable.__name__),
-        description=kwargs.get("description", inspect.getdoc(_callable)),
+        description=parsed_doc[0],
         callable=_callable,
         checks=checks,
-        options=kwargs.get("options", inspect_options(_callable)),
+        options=kwargs.get("options", inspect_options(_callable, parsed_doc[2])),
+        help_text=parsed_doc[1],
         **kwargs
     )
 
@@ -117,6 +144,7 @@ class Command:
 
         self.callable = kwargs.get("callable")
         self.checks = kwargs.get("checks", [])
+        self.help_text = kwargs.get("help_text")
 
         self.bot = kwargs.get("bot")
 
@@ -130,6 +158,13 @@ class Command:
 
     def bind(self, obj):
         self.options.pop(0)  # Options have to be shifted to respect the self parameter
+        for option in self.options:
+            if isinstance(option, SubCommand):
+                option.bind(obj)
+
+            elif isinstance(option, SubCommandGroup):
+                option.bind(obj)
+
         self.callable = types.MethodType(self.callable, obj)
 
     def sub_command(self, _next, **kwargs):
@@ -270,10 +305,15 @@ class SubCommand(BaseOption):
         self.parent = kwargs.get("parent")
 
         self.checks = kwargs.get("checks")
+        self.help_text = kwargs.get("help_text")
 
     def __iter__(self):
         yield from super().__iter__()
         yield "options", [dict(o) for o in self.options]
+
+    def bind(self, obj):
+        self.options.pop(0)  # Options have to be shifted to respect the self parameter
+        self.callable = types.MethodType(self.callable, obj)
 
 
 class SubCommandGroup(BaseOption):
@@ -285,6 +325,7 @@ class SubCommandGroup(BaseOption):
         self.parent = kwargs.get("parent")
 
         self.checks = kwargs.get("checks")
+        self.help_text = kwargs.get("help_text")
 
     def __iter__(self):
         yield from super().__iter__()
@@ -303,6 +344,17 @@ class SubCommandGroup(BaseOption):
                 return opt
 
             return predicate
+
+    def bind(self, obj):
+        self.options.pop(0)  # Options have to be shifted to respect the self parameter
+        for option in self.options:
+            if isinstance(option, SubCommand):
+                option.bind(obj)
+
+            elif isinstance(option, SubCommandGroup):
+                option.bind(obj)
+
+        self.callable = types.MethodType(self.callable, obj)
 
 
 class Context:
