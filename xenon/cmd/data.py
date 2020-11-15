@@ -16,10 +16,10 @@ class InteractionData(Entity):
         super().__init__()
         self.id = data["id"]
         self.type = InteractionType(data["type"])
-        self.guild_id = data["guild_id"]
-        self.channel_id = data["channel_id"]
-        self.member = Member(data["member"])
         self.token = data["token"]
+        self.guild_id = data.get("guild_id")
+        self.channel_id = data.get("channel_id")
+        self.member = Member(data["member"]) if "member" in data else None
 
         self.data = None
         if self.type == InteractionType.APPLICATION_COMMAND:

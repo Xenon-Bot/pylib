@@ -29,7 +29,7 @@ class Bot:
         self._commands = []
 
         self._web = web.Application()
-        self._web.add_routes([web.post("/webh", self.webhook_entry)])
+        self._web.add_routes([web.post("/entry", self.webhook_entry)])
 
     async def command_received(self, data):
         command_id = data.data.id
