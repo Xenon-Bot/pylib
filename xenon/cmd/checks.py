@@ -2,11 +2,11 @@ from enum import IntEnum
 
 from .errors import *
 
-
 __all__ = (
     "Check",
     "CheckFailed",
     "is_bot_owner",
+    "has_permissions",
     "Cooldown",
     "OnCooldown",
     "cooldown"
@@ -32,6 +32,25 @@ def is_bot_owner(next_):
         return True
 
     return Check(check, next_)
+
+
+def has_permissions(*perms):
+    def predicate(next_):
+        async def check(ctx, *args):
+            raise ValueError
+            if ctx.member.permissions.administrator:
+                # administrator bypasses all
+                return True
+
+            for perm in perms:
+                if not getattr(ctx.member.permissions, perm):
+                    raise ValueError
+
+            return True
+
+        return Check(check, next_)
+
+    return predicate
 
 
 class CooldownType(IntEnum):
