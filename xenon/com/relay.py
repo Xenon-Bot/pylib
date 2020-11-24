@@ -4,10 +4,24 @@ import weakref
 import uuid
 import orjson
 import inspect
+import traceback
+
+from .service import ExternalService
 
 __all__ = (
     "Relay",
 )
+
+
+class RPCResult:
+    def __init__(self, error, value):
+        self.error = error
+
+        if len(value) == 1:
+            self.value = value[0]
+
+        else:
+            self.value = tuple(value)
 
 
 class Relay:
@@ -32,8 +46,8 @@ class Relay:
             self._reader_task = None
 
     async def _iter(self):
-        while self._mpsc.is_active:
-            fut = asyncio.Future()
+        while True:
+            fut = self.loop.create_future()
             self._subscribers.add(fut)
             yield await fut
 
@@ -42,16 +56,25 @@ class Relay:
             self._reader_task = self.loop.create_task(self._reader())
 
     async def subscribe(self, *channels, pattern=False):
-        channel_factory = self._mpsc.channel if not pattern else self._mpsc.pattern
-        await self.redis.subscribe(*[channel_factory(c) for c in channels])
+        if pattern:
+            await self.redis.psubscribe(*[self._mpsc.pattern(c) for c in channels])
+
+        else:
+            await self.redis.subscribe(*[self._mpsc.channel(c) for c in channels])
+
         self.start_reader()
         async for channel, msg in self._iter():
-            if channel.name.decode("utf-8") in channels:
-                yield channel, msg
+            channel_name = channel.name.decode("utf-8")
+            if channel_name in channels:
+                yield channel_name, msg
 
     async def unsubscribe(self, *channels, pattern=False):
-        channel_factory = self._mpsc.channel if not pattern else self._mpsc.pattern
-        await self.redis.unsubscribe(*[channel_factory(c) for c in channels])
+        return
+        if pattern:
+            await self.redis.punsubscribe(*[self._mpsc.pattern(c) for c in channels])
+
+        else:
+            await self.redis.unsubscribe(*[self._mpsc.channel(c) for c in channels])
 
     async def publish(self, channel, data):
         await self.redis.publish(channel, data)
@@ -66,7 +89,7 @@ class Relay:
             if channel_name in channels:
                 data = await self.redis.get(f"compete:{compete_key}")
                 if data is not None:
-                    yield channel, data
+                    yield channel_name, data
 
     async def publish_compete(self, channel: str, data: str):
         compete_key = str(uuid.uuid4())
@@ -79,36 +102,78 @@ class Relay:
             nonce = data["nonce"]
             args = data["args"]
 
-            res = await _callable(*args)
-            if inspect.isawaitable(res):
-                res = await res
+            async def poll_results():
+                try:
+                    called = _callable(*args)
+                    if inspect.isasyncgen(called):
+                        async for res in called:
+                            if isinstance(res, tuple):
+                                res = list(res)
 
-            if isinstance(res, tuple):
-                res = list(res)
+                            else:
+                                res = [res]
 
-            else:
-                res = [res]
+                            await self.publish(f"rpc:{nonce}", orjson.dumps({
+                                "error": False,
+                                "value": res
+                            }))
 
-            await self.publish(f"rpc:{nonce}", orjson.dumps(res))
+                    else:
+                        res = called
+                        if inspect.isawaitable(res):
+                            res = await res
 
-    async def call_rpc(self, name, *args):
+                        if isinstance(res, tuple):
+                            res = list(res)
+
+                        else:
+                            res = [res]
+
+                        await self.publish(f"rpc:{nonce}", orjson.dumps({
+                            "error": False,
+                            "value": res
+                        }))
+
+                except Exception as e:
+                    traceback.print_exc()
+                    await self.publish(f"rpc:{nonce}", orjson.dumps({
+                        "error": True,
+                        "value": [e.__class__.__name__]
+                    }))
+
+            self.loop.create_task(poll_results())
+
+    async def call_rpc(self, name, *args, timeout=None):
+        nonce = str(uuid.uuid4())
+        data = orjson.dumps({"nonce": nonce, "args": list(args)})
+        await self.publish_compete(f"rpc:{name}", data)
+
+        async def _inner():
+            try:
+                async for _, msg in self.subscribe(f"rpc:{nonce}"):
+                    res = orjson.loads(msg)
+                    return RPCResult(**res)
+
+            finally:
+                await self.unsubscribe(f"rpc:{nonce}")
+
+        return await asyncio.wait_for(_inner(), timeout=timeout)
+
+    async def poll_rpc(self, name, *args):
         nonce = str(uuid.uuid4())
         data = orjson.dumps({"nonce": nonce, "args": list(args)})
         await self.publish_compete(f"rpc:{name}", data)
         try:
             async for _, msg in self.subscribe(f"rpc:{nonce}"):
                 res = orjson.loads(msg)
-                if len(res) == 1:
-                    return res[0]
-
-                else:
-                    return tuple(res)
+                yield RPCResult(**res)
         finally:
             await self.unsubscribe(f"rpc:{nonce}")
 
     async def provide_service(self, service):
         tasks = []
 
+        service.relay = self
         for rpc in service.rpc_list:
             tasks.append(self.loop.create_task(self.provide_rpc(
                 f"{service.name}:{rpc.name}",
@@ -117,3 +182,6 @@ class Relay:
 
         if len(tasks) > 0:
             return await asyncio.wait(tasks, return_when=asyncio.FIRST_EXCEPTION)
+
+    def get_service(self, name):
+        return ExternalService(self, name)

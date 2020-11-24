@@ -1,13 +1,14 @@
-from .relay import Relay
+import types
 
 
 __all__ = (
     "Service",
+    "ExternalService"
 )
 
 
 class Service:
-    relay: Relay
+    relay = None
     name: str
 
     @property
@@ -15,6 +16,7 @@ class Service:
         for name in dir(self):
             attr = getattr(self, name)
             if isinstance(attr, Service.rpc):
+                attr.callable = types.MethodType(attr.callable, self)
                 yield attr
 
     class rpc:
@@ -31,3 +33,12 @@ class Service:
 
         def __call__(self, callable):
             self.callable = callable
+
+
+class ExternalService:
+    def __init__(self, relay, name):
+        self.relay = relay
+        self.name = name
+
+    def __getattr__(self, item):
+        pass
