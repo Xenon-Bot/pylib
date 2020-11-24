@@ -1,10 +1,11 @@
 from aiohttp import web
 import asyncio
-import inspect
 import ed25519
 import json
 import traceback
 import sys
+import orjson
+import inspect
 
 from .. import rest
 from ..entities import Snowflake
@@ -12,6 +13,7 @@ from ..entities import Snowflake
 from .enums import *
 from .data import *
 from .command import *
+from .listener import *
 
 
 __all__ = (
@@ -23,13 +25,22 @@ class Bot:
     def __init__(self, **kwargs):
         self.loop = kwargs.get("loop", asyncio.get_event_loop())
         self.http = kwargs.get("http")
+        self.relay = kwargs.get("relay")
         self.public_key = ed25519.VerifyingKey(kwargs.get("public_key"), encoding="hex")
         self.user = None
 
         self._commands = []
+        self._listeners = {
+            event: set()
+            for event in kwargs.get("events", [])
+        }
 
         self._web = web.Application()
-        self._web.add_routes([web.post("/entry", self.webhook_entry)])
+        self._web.add_routes([web.post(kwargs.get("path", "/entry"), self.webhook_entry)])
+
+    @property
+    def redis(self):
+        return self.relay.redis
 
     async def command_received(self, data):
         command_id = data.data.id
@@ -41,7 +52,7 @@ class Bot:
         tb = "".join(traceback.format_exception(type(e), e, e.__traceback__))
         print(tb, file=sys.stderr)
         return InteractionResponse.respond_and_eat(
-            content=f"__**Unexpected Error**__```py\n{e.__class__.__name__}:\n{str(tb)}```",
+            content=f"<:error:777557308216967188> Unexpected Error```py\n{e.__class__.__name__}:\n{str(tb)}```",
             ephemeral=True
         )
 
@@ -72,6 +83,7 @@ class Bot:
         await runner.setup()
         site = web.TCPSite(runner, *args, **kwargs)
         await site.start()
+        await self.listen_for(*self._listeners.keys())
 
     async def stop(self):
         if self._web.runner is not None:
@@ -100,6 +112,9 @@ class Bot:
         for task in module.tasks:
             task.start(self.loop)
 
+        for listener in module.listeners:
+            self.add_listener(listener)
+
     def remove_module(self, module):
         for cmd in module.commands:
             self.remove_command(cmd)
@@ -107,7 +122,7 @@ class Bot:
         for task in module.tasks:
             task.stop()
 
-    def command(self, _next, **kwargs):
+    def command(self, _next=None, **kwargs):
         if _next is not None:
             cmd = construct_command(_next, **kwargs)
             self.add_command(cmd)
@@ -164,3 +179,70 @@ class Bot:
 
         for ex_cmd in existing:
             await self.unregister_command(Snowflake(ex_cmd["id"]))
+
+    def listener(self, _next=None, **kwargs):
+        if _next is not None:
+            listener = Listener(_next, _next.__name__)
+            self.add_listener(listener)
+            return listener
+
+        else:
+            def predicate(_next):
+                listener = Listener(_next, kwargs.get("name", _next.__name__))
+                self.add_listener(listener)
+                return listener
+
+            return predicate
+
+    def add_listener(self, listener):
+        self._listeners.setdefault(listener.event, set()).add(listener)
+
+    def remove_listener(self, listener):
+        try:
+            self._listeners[listener.event].remove(listener)
+        except KeyError:
+            pass
+
+    def dispatch(self, event, data):
+        if event in self._listeners:
+            for listener in self._listeners[event]:
+                self.loop.create_task(listener.execute(data))
+
+    async def listen_for(self, *events):
+        gateway_prefix = "gateway:events:"
+        channels = [f"{gateway_prefix}{e}" for e in events]
+        print(channels)
+        if len(channels) <= 0:
+            return
+
+        async for channel, msg in self.relay.subscribe(*channels):
+            try:
+                if channel.startswith(gateway_prefix):
+                    channel = channel[len(gateway_prefix):]
+
+                self.dispatch(channel, orjson.loads(msg))
+
+            except asyncio.CancelledError:
+                raise
+
+            except:
+                traceback.print_exc()
+                continue
+
+    async def wait_for(self, event, check=lambda *d: True, timeout=None):
+        fut = self.loop.create_future()
+
+        async def _inner(data):
+            res = check(data)
+            if inspect.isawaitable(res):
+                res = await res
+
+            if res:
+                fut.set_result(data)
+
+        listener = Listener(_inner, event)
+        self.add_listener(listener)
+        try:
+            return await asyncio.wait_for(fut, timeout=timeout)
+        finally:
+            self.remove_listener(listener)
