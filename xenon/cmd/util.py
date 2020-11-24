@@ -1,4 +1,5 @@
 import asyncio
+import traceback
 
 __all__ = (
     "list_get",
@@ -40,11 +41,13 @@ async def require_confirmation(ctx, msg):
         await msg.delete_all_reactions()
         return False
 
+    await msg.delete_all_reactions()
     return True
 
 
 class ListMenu:
     embed_kwargs = {}
+    empty_text = "Nothing to display"
 
     def __init__(self, ctx, msg):
         self.ctx = ctx
@@ -62,7 +65,7 @@ class ListMenu:
             await self.update()
             return
 
-        await self.ctx.edit_response(embeds=self.make_embeds(items), message_id=self.msg.id)
+        await self.ctx.edit_response("", embeds=self.make_embeds(items), message_id=self.msg.id)
 
         if len(items) == 0 and self.page == 0:
             # If the first page doesn't contain any backups, there is no need to keep up the pagination
@@ -89,7 +92,7 @@ class ListMenu:
         else:
             return [{
                 "title": "List",
-                "description": "Nothing to display",
+                "description": self.empty_text,
                 **self.embed_kwargs
             }]
 
@@ -102,7 +105,7 @@ class ListMenu:
         try:
             while True:
                 try:
-                    data = await self.ctx.client.wait_for(
+                    data = await self.ctx.bot.wait_for(
                         "message_reaction_add",
                         check=lambda d: d["user_id"] == self.ctx.author.id and
                                         d["message_id"] == self.msg.id and
@@ -112,7 +115,7 @@ class ListMenu:
 
                     emoji = data["emoji"]["name"]
                     try:
-                        await self.msg.remove_reaction(emoji, data["user_id"])
+                        await self.msg.delete_user_reaction(emoji, data["user_id"])
                     except Exception:
                         pass
 

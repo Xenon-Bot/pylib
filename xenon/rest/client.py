@@ -457,7 +457,7 @@ class HTTPClient:
 
     def delete_user_reaction(self, message, emoji, user):
         req = Request("DELETE", "/channels/{channel_id}/messages/{message_id}/reactions/{emoji}/{user_id}",
-                      channel_id=message.channel_id, message_id=message.id, emoji=emoji, user=entity_or_id(user))
+                      channel_id=message.channel_id, message_id=message.id, emoji=emoji, user_id=entity_or_id(user))
         self.start_request(req)
         return req
 
