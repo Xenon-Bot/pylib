@@ -68,6 +68,12 @@ class Entity:
     def created_at(self):
         return datetime.utcfromtimestamp(((int(self.id) >> 22) + DISCORD_EPOCH) / 1000)
 
+    def fill_http(self, http):
+        self._http = http
+
+    def fill_bridge(self, bridge):
+        self._bridge = bridge
+
 
 class Snowflake(Entity):
     def __init__(self, id):
@@ -148,7 +154,7 @@ class Guild(PartialGuild):
         self.approximate_presence_count = data.get("approximate_presence_count")
 
     def __iter__(self):
-        yield from self._data
+        yield from self._data.items()
 
     @property
     def icon_url(self):
@@ -239,7 +245,7 @@ class Channel(Entity):
         self.last_pin_timestamp = data.get("last_pin_timestamp")
 
     def __iter__(self):
-        yield from self._data
+        yield from self._data.items()
 
     def avatar_url_as(self, fmt="webp"):
         return Asset(self._http, f"app-icons/{self.application_id}/{self.icon}.{fmt}")
@@ -331,7 +337,7 @@ class User(Entity):
 
 
 class Member(User):
-    __slots__ = ("_data", "nick", "roles", "joined_at", "premium_since", "deaf", "mute")
+    __slots__ = ("_data", "nick", "roles", "joined_at", "premium_since", "deaf", "mute", "permissions")
 
     def __init__(self, data):
         super().__init__(data["user"])
@@ -343,6 +349,7 @@ class Member(User):
         self.premium_since = parse_time(data.get("premium_since"))
         self.deaf = data["deaf"]
         self.mute = data["mute"]
+        self.permissions = Permissions(int(data["permissions"])) if "permissions" in data else None
 
     def __iter__(self):
         yield from self._data
@@ -442,3 +449,15 @@ class Message(Entity):
 
     def __iter__(self):
         yield from self._data
+
+    def create_reaction(self, emoji):
+        return self._http.create_reaction(self, emoji)
+
+    def delete_all_reactions(self):
+        return self._http.delete_all_reactions(self)
+
+    async def delete_own_reaction(self, emoji):
+        return self._http.delete_own_reaction(self, emoji)
+
+    async def delete_user_reaction(self, emoji, user):
+        return self._http.delete_user_reaction(self, emoji, user)
