@@ -435,7 +435,7 @@ class Context:
 
     async def edit_response(self, content=None, message_id="@original", **data):
         await self.wait_for_token()
-        data["content"] = content
+        data["content"] = " " if content == "" else content  # removing message content is weird
         response = InteractionResponse(InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE, data)
         req = rest.Request("PATCH",
                            "/webhooks/{application_id}/{token}/messages/{message_id}",
