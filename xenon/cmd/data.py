@@ -1,5 +1,6 @@
 from ..entities import *
 from .enums import *
+from .format import *
 
 __all__ = (
     "InteractionData",
@@ -83,6 +84,9 @@ class InteractionResponse:
         if data is not None:
             ephemeral = data.pop("ephemeral", False)
             data["flags"] = 0 if not ephemeral else 1 << 6
+
+            if "f" in data:
+                data.update(format_message(data["content"], data.pop("f")))
 
         self.data = data
 
