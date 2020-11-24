@@ -2,8 +2,9 @@ from abc import ABC
 import inspect
 import asyncio
 import types
+import time
 
-from .. import rest
+from .. import rest, Message
 
 from .enums import *
 from .data import *
@@ -167,7 +168,7 @@ class Command:
 
         self.callable = types.MethodType(self.callable, obj)
 
-    def sub_command(self, _next, **kwargs):
+    def sub_command(self, _next=None, **kwargs):
         if _next is not None:
             opt = _construct_sub_command(_next, parent=self, **kwargs)
             self.options.append(opt)
@@ -181,7 +182,7 @@ class Command:
 
             return predicate
 
-    def sub_group(self, _next, **kwargs):
+    def sub_group(self, _next=None, **kwargs):
         if _next is not None:
             opt = _construct_sub_group(_next, parent=self, **kwargs)
             self.options.append(opt)
@@ -363,6 +364,16 @@ class Context:
         self.cmd = cmd
 
         self.future = asyncio.Future()
+        self.initial_response = None
+
+    async def wait_for_token(self):
+        if self.initial_response is None:
+            self.initial_response = time.perf_counter()
+            return
+
+        delta = time.perf_counter() - self.initial_response
+        if delta < 0.5:
+            await asyncio.sleep(0.5 - delta)
 
     @property
     def member(self):
@@ -380,11 +391,21 @@ class Context:
     def token(self):
         return self.data.token
 
+    @property
+    def channel_id(self):
+        return self.data.channel_id
+
+    @property
+    def guild_id(self):
+        return self.data.guild_id
+
     async def ack(self):
         if not self.future.done():
             self.future.set_result(InteractionResponse.ack())
 
-    async def respond_and_eat(self, **data):
+    async def respond_and_eat(self, content=None, **data):
+        await self.wait_for_token()
+        data["content"] = content
         response = InteractionResponse(InteractionResponseType.CHANNEL_MESSAGE, data)
         if not self.future.done():
             self.future.set_result(response)
@@ -396,7 +417,9 @@ class Context:
             self.bot.http.start_request(req, json=response.data)
             return await req
 
-    async def respond(self, **data):
+    async def respond(self, content=None, wait=False, **data):
+        await self.wait_for_token()
+        data["content"] = content
         response = InteractionResponse(InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE, data)
         if not self.future.done():
             self.future.set_result(response)
@@ -405,13 +428,33 @@ class Context:
             req = rest.Request("POST",
                                "/webhooks/{application_id}/{token}",
                                application_id=self.bot.user.id, token=self.token)
-            self.bot.http.start_request(req, json=response.data)
-            return await req
+            self.bot.http.start_request(req, json=response.data, params={"wait": "true" if wait else "false"})
+            res = await req
+            if res is not None:
+                return Message(res)
 
-    async def edit_response(self, message_id="@original", **data):
+    async def edit_response(self, content=None, message_id="@original", **data):
+        await self.wait_for_token()
+        data["content"] = content
         response = InteractionResponse(InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE, data)
         req = rest.Request("PATCH",
                            "/webhooks/{application_id}/{token}/messages/{message_id}",
                            application_id=self.bot.user.id, token=self.token, message_id=message_id)
         self.bot.http.start_request(req, json=response.data)
+        return await req
+
+    async def delete_response(self, message_id="@original"):
+        await self.wait_for_token()
+        req = rest.Request("DELETE",
+                           "/webhooks/{application_id}/{token}/messages/{message_id}",
+                           application_id=self.bot.user.id, token=self.token, message_id=message_id)
+        self.bot.http.start_request(req)
+        return await req
+
+    async def get_response(self, message_id="@original"):
+        await self.wait_for_token()
+        req = rest.Request("PATCH",
+                           "/webhooks/{application_id}/{token}/messages/{message_id}",
+                           application_id=self.bot.user.id, token=self.token, message_id=message_id, converter=Message)
+        self.bot.http.start_request(req, json={})
         return await req
