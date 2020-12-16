@@ -1,6 +1,7 @@
 from aiohttp import web
 import asyncio
-import ed25519
+from nacl.signing import VerifyKey
+from nacl.exceptions import BadSignatureError
 import json
 import traceback
 import sys
@@ -14,6 +15,8 @@ from .enums import *
 from .data import *
 from .command import *
 from .listener import *
+from .errors import *
+from .format import *
 
 
 __all__ = (
@@ -26,7 +29,7 @@ class Bot:
         self.loop = kwargs.get("loop", asyncio.get_event_loop())
         self.http = kwargs.get("http")
         self.relay = kwargs.get("relay")
-        self.public_key = ed25519.VerifyingKey(kwargs.get("public_key"), encoding="hex")
+        self.public_key = VerifyKey(bytes.fromhex(kwargs.get("public_key")))
         self.user = None
 
         self._commands = []
@@ -49,23 +52,40 @@ class Bot:
                 return await cmd.execute(data)
 
     async def command_error(self, ctx, e):
-        tb = "".join(traceback.format_exception(type(e), e, e.__traceback__))
-        print(tb, file=sys.stderr)
-        return InteractionResponse.respond_and_eat(
-            content=f"<:error:777557308216967188> Unexpected Error```py\n{e.__class__.__name__}:\n{str(tb)}```",
-            ephemeral=True
-        )
+        if isinstance(e, MissingPermissions):
+            await ctx.respond_and_eat(
+                f"You are missing the following permissions: `{', '.join([m.upper() for m in e.missing])}`",
+                f=FormatAs.ERROR,
+                ephemeral=True
+            )
+
+        elif isinstance(e, BotMissingPermissions):
+            await ctx.respond_and_eat(
+                f"The bot is missing the following permissions: `{', '.join([m.upper() for m in e.missing])}`",
+                f=FormatAs.ERROR,
+                ephemeral=True
+            )
+
+        else:
+            tb = "".join(traceback.format_exception(type(e), e, e.__traceback__))
+            print(tb, file=sys.stderr)
+            await ctx.respond_and_eat(
+                f"<:error:777557308216967188> Unexpected Error```py\n{e.__class__.__name__}:\n{str(tb)}```",
+                ephemeral=True
+            )
 
     async def webhook_entry(self, req):
-        raw_data = await req.read()
+        raw_data = await req.text()
         print(json.dumps(json.loads(raw_data), indent=2))
         signature = req.headers.get("x-signature-ed25519")
-        if signature is None:
+        timestamp = req.headers.get("x-signature-timestamp")
+        if signature is None or timestamp is None:
             return web.HTTPUnauthorized()
 
         try:
-            self.public_key.verify(signature, raw_data, encoding="hex")
-        except ed25519.BadSignatureError:
+            self.public_key.verify(f"{timestamp}{raw_data}".encode(), bytes.fromhex(signature))
+        except BadSignatureError:
+            print("verify error")
             return web.HTTPUnauthorized()
 
         data = InteractionData(json.loads(raw_data))
@@ -137,12 +157,12 @@ class Bot:
             return predicate
 
     def fetch_commands(self):
-        req = rest.Request("GET", "/applications/{application_id}/guilds/496683369665658880/commands", application_id=self.user.id)
+        req = rest.Request("GET", "/applications/{application_id}/commands", application_id=self.user.id)
         self.http.start_request(req)
         return req
 
     async def unregister_command(self, cmd):
-        req = rest.Request("DELETE", "/applications/{application_id}/guilds/496683369665658880/commands/{command_id}",
+        req = rest.Request("DELETE", "/applications/{application_id}/commands/{command_id}",
                            application_id=self.user.id, command_id=cmd.id)
         self.http.start_request(req)
         result = await req
@@ -150,7 +170,7 @@ class Bot:
         return result
 
     async def register_command(self, cmd):
-        req = rest.Request("POST", "/applications/{application_id}/guilds/496683369665658880/commands",
+        req = rest.Request("POST", "/applications/{application_id}/commands",
                            application_id=self.user.id)
         self.http.start_request(req, json=dict(cmd))
         result = await req
@@ -158,7 +178,7 @@ class Bot:
         return result
 
     async def update_command(self, command_id, cmd):
-        req = rest.Request("PATCH", "/applications/{application_id}/guilds/496683369665658880/commands/{command_id}",
+        req = rest.Request("PATCH", "/applications/{application_id}/commands/{command_id}",
                            application_id=self.user.id, command_id=command_id)
         self.http.start_request(req, json=dict(cmd))
         result = await req

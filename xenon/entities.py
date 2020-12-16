@@ -137,8 +137,8 @@ class Guild(PartialGuild):
         self.large = data.get("large", False)
         self.member_count = data.get("member_count")
         self.voice_states = data.get("voice_states", [])
-        self.members = data.get("members", [])
-        self.channels = data.get("channels", [])
+        self.members = [Member(m) for m in data.get("members", [])]
+        self.channels = [Channel(c) for c in data.get("channels", [])]
         self.presences = data.get("presences", [])
         self.max_presences = data.get("max_presences")
         self.max_members = data.get("max_members")

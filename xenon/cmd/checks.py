@@ -7,14 +7,11 @@ __all__ = (
     "CheckFailed",
     "is_bot_owner",
     "has_permissions",
+    "bot_has_permissions",
     "Cooldown",
     "OnCooldown",
     "cooldown"
 )
-
-
-class CheckFailed(CommandError):
-    pass
 
 
 class Check:
@@ -28,8 +25,11 @@ class Check:
 
 def is_bot_owner(next_):
     async def check(ctx, *args):
-        raise ValueError
-        return True
+        guild = await ctx.get_guild()
+        if guild.owner_id == ctx.author.id:
+            return True
+
+        raise NotGuildOwner()
 
     return Check(check, next_)
 
@@ -37,14 +37,40 @@ def is_bot_owner(next_):
 def has_permissions(*perms):
     def predicate(next_):
         async def check(ctx, *args):
-            raise ValueError
             if ctx.member.permissions.administrator:
                 # administrator bypasses all
                 return True
 
+            missing = set()
             for perm in perms:
                 if not getattr(ctx.member.permissions, perm):
-                    raise ValueError
+                    missing.add(perm)
+
+            if len(missing) > 0:
+                raise PermissionError(missing)
+
+            return True
+
+        return Check(check, next_)
+
+    return predicate
+
+
+def bot_has_permissions(*perms):
+    def predicate(next_):
+        async def check(ctx, *args):
+            # TODO: Get actual bot member lol
+            if ctx.member.permissions.administrator:
+                # administrator bypasses all
+                return True
+
+            missing = set()
+            for perm in perms:
+                if not getattr(ctx.member.permissions, perm):
+                    missing.add(perm)
+
+            if len(missing) > 0:
+                raise BotMissingPermissions(missing)
 
             return True
 
@@ -58,12 +84,6 @@ class CooldownType(IntEnum):
     GUILD = 1
     CHANNEL = 2
     AUTHOR = 3
-
-
-class OnCooldown(CheckFailed):
-    def __init__(self, cooldown, remaining):
-        self.cooldown = cooldown
-        self.remaining = remaining
 
 
 class Cooldown(Check):

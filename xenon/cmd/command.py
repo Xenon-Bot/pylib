@@ -251,7 +251,12 @@ class Command:
             self.bot.loop.create_task(_wrapped_callable(self.callable(ctx, *options)))
             return await ctx.future
         except Exception as e:
-            return await self.bot.command_error(ctx, e)
+            if not ctx.future.done():
+                ctx.initial_response = time.perf_counter()  # TODO: Remove when discords PR has shipped
+                ctx.future.cancel()
+
+            self.bot.loop.create_task(self.bot.command_error(ctx, e))
+            return InteractionResponse.ack()
 
 
 class BaseOption(ABC):
@@ -366,6 +371,8 @@ class Context:
         self.future = asyncio.Future()
         self.initial_response = None
 
+        self._entity_cache = {}
+
     async def wait_for_token(self):
         if self.initial_response is None:
             self.initial_response = time.perf_counter()
@@ -402,6 +409,43 @@ class Context:
     async def ack(self):
         if not self.future.done():
             self.future.set_result(InteractionResponse.ack())
+
+    async def get_full_guild(self, cache=True):
+        guild = await self.get_guild(cache)
+        guild.channels = await self.get_guild_channels(cache)
+        return guild
+
+    async def get_guild(self, cache=True):
+        if cache and "guild" in self._entity_cache:
+            return self._entity_cache["guild"]
+
+        result = await self.bot.http.get_guild(self.guild_id)
+        self._entity_cache["guild"] = result
+        return result
+
+    async def get_guild_roles(self, cache=True):
+        if cache and "roles" in self._entity_cache:
+            return self._entity_cache["roles"]
+
+        result = await self.bot.http.get_guild_roles(self.guild_id)
+        self._entity_cache["roles"] = result
+        return result
+
+    async def get_guild_channels(self, cache=True):
+        if cache and "channels" in self._entity_cache:
+            return self._entity_cache["channels"]
+
+        result = await self.bot.http.get_guild_channels(self.guild_id)
+        self._entity_cache["channels"] = result
+        return result
+
+    async def get_channel(self, cache=True):
+        if cache and "channel" in self._entity_cache:
+            return self._entity_cache["channel"]
+
+        result = await self.bot.http.get_channel(self.channel_id)
+        self._entity_cache["channel"] = result
+        return result
 
     async def respond_and_eat(self, content=None, **data):
         await self.wait_for_token()

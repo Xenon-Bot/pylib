@@ -15,6 +15,13 @@ class FormatAs(IntEnum):
     WORKING = 4
     WARNING = 5
 
+    EMBED = 10
+    EMBED_INFO = 11
+    EMBED_SUCCESS = 12
+    EMBED_ERROR = 13
+    EMBED_WORKING = 14
+    EMBED_WARNING = 15
+
 
 def format_message(text, f=FormatAs.TEXT) -> dict:
     if f == FormatAs.INFO:

@@ -7,13 +7,8 @@ __all__ = (
     "Converter",
     "RoleConverter",
     "UserConverter",
-    "ChannelConverter",
-    "ConverterFailed"
+    "ChannelConverter"
 )
-
-
-class ConverterFailed(CommandError):
-    pass
 
 
 class Converter:
@@ -23,7 +18,7 @@ class Converter:
         self.value = value
 
     async def convert(self, ctx):
-        pass
+        raise ConverterFailed(self)
 
 
 class RoleConverter(Converter):
