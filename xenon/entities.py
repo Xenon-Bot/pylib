@@ -43,11 +43,11 @@ class Asset:
 
 
 class Entity:
-    __slots__ = ("id", "_http", "_bridge")
+    __slots__ = ("id", "relay", "http")
 
     def __init__(self):
-        self._http = None
-        self._bridge = None
+        self.relay = None
+        self.http = None
 
     def __hash__(self):
         return int(self.id) >> 22
@@ -61,18 +61,14 @@ class Entity:
 
         return True
 
-    def __iter__(self):
-        yield "id", self.id
+    def to_dict(self):
+        return {
+            "id": self.id
+        }
 
     @property
     def created_at(self):
         return datetime.utcfromtimestamp(((int(self.id) >> 22) + DISCORD_EPOCH) / 1000)
-
-    def fill_http(self, http):
-        self._http = http
-
-    def fill_bridge(self, bridge):
-        self._bridge = bridge
 
 
 class Snowflake(Entity):
@@ -89,8 +85,8 @@ class PartialGuild(Entity):
         self.id = data["id"]
         self.unavailable = data.get("unavailable", False)
 
-    def __iter__(self):
-        yield from {
+    def to_dict(self):
+        return {
             "id": self.id,
             "unavailable": self.unavailable
         }
@@ -153,8 +149,8 @@ class Guild(PartialGuild):
         self.approximate_member_count = data.get("approximate_member_count")
         self.approximate_presence_count = data.get("approximate_presence_count")
 
-    def __iter__(self):
-        yield from self._data.items()
+    def to_dict(self):
+        return self._data
 
     @property
     def icon_url(self):
@@ -203,11 +199,15 @@ class Guild(PartialGuild):
 
         return Asset(self._http, f"banners/{self.id}/{self.banner}.{fmt}")
 
-    async def fetch_channels(self, http):
+    async def fetch_channels(self):
+        self.channels = await self.http.get_guild_channels(self.id)
+        return self.channels
+
+    async def fetch_member(self):
         pass
 
-    async def fetch_member(self, http):
-        pass
+    async def fetch_bans(self):
+        return []
 
 
 class Channel(Entity):
@@ -244,8 +244,8 @@ class Channel(Entity):
         self.parent_id = data.get("parent_id")
         self.last_pin_timestamp = data.get("last_pin_timestamp")
 
-    def __iter__(self):
-        yield from self._data.items()
+    def to_dict(self):
+        return self._data
 
     def avatar_url_as(self, fmt="webp"):
         return Asset(self._http, f"app-icons/{self.application_id}/{self.icon}.{fmt}")
@@ -276,8 +276,8 @@ class Role(Entity):
         self.managed = data["managed"]
         self.mentionable = data["mentionable"]
 
-    def __iter__(self):
-        yield from {
+    def to_dict(self):
+        return {
             "id": self.id,
             "name": self.name,
             "color": self.color,
@@ -314,8 +314,12 @@ class User(Entity):
         self.premium_type = PremiumType(data["premium_type"]) if "premium_type" in data else None
         self.public_flags = UserFlags(data.get("public_flags", 0))
 
-    def __iter__(self):
-        yield from self._data
+    def to_dict(self):
+        return self._data
+
+    @property
+    def name(self):
+        return self.username
 
     @property
     def avatar_url(self):
@@ -351,8 +355,8 @@ class Member(User):
         self.mute = data["mute"]
         self.permissions = Permissions(int(data["permissions"])) if "permissions" in data else None
 
-    def __iter__(self):
-        yield from self._data
+    def to_dict(self):
+        return self._data
 
     @classmethod
     def from_message(cls, data):
@@ -385,8 +389,8 @@ class MessageReaction:
         self.me = data["me"]
         self.emoji = data["emoji"]
 
-    def __iter__(self):
-        yield from {
+    def to_dict(self):
+        return {
             "count": self.count,
             "me": self.me,
             "emoji": self.emoji
@@ -406,8 +410,8 @@ class MessageAttachment(Entity):
         self.height = data["height"]
         self.width = data["width"]
 
-    def __iter__(self):
-        yield from {
+    def to_dict(self):
+        return {
             "id": self.id,
             "filename": self.filename,
             "size": self.size,
@@ -447,17 +451,17 @@ class Message(Entity):
         self.type = MessageType(data["type"])
         self.flags = MessageFlags(data.get("flags", 0))
 
-    def __iter__(self):
-        yield from self._data
+    def to_dict(self):
+        return self._data
 
     def create_reaction(self, emoji):
-        return self._http.create_reaction(self, emoji)
+        return self.http.create_reaction(self, emoji)
 
     def delete_all_reactions(self):
-        return self._http.delete_all_reactions(self)
+        return self.http.delete_all_reactions(self)
 
     async def delete_own_reaction(self, emoji):
-        return self._http.delete_own_reaction(self, emoji)
+        return self.http.delete_own_reaction(self, emoji)
 
     async def delete_user_reaction(self, emoji, user):
-        return self._http.delete_user_reaction(self, emoji, user)
+        return self.http.delete_user_reaction(self, emoji, user)

@@ -150,8 +150,10 @@ class HTTPClient:
         }
 
         if "json" in kwargs:
-            headers["Content-Type"] = "application/json"
-            kwargs["data"] = orjson.dumps(kwargs.pop("json"))
+            data = kwargs.pop("json")
+            if data is not None:
+                headers["Content-Type"] = "application/json"
+                kwargs["data"] = orjson.dumps(data)
 
         if "reason" in kwargs:
             headers["X-Audit-Log-Reason"] = urlquote(kwargs.pop("reason"), safe="/ ")

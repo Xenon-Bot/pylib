@@ -27,12 +27,16 @@ class RPCResult:
 class Relay:
     def __init__(self, redis, **kwargs):
         self.redis = redis
-        self.loop = kwargs.get("loop", asyncio.get_event_loop())
+        self._loop = kwargs.get("loop")
 
         self._mpsc = aioredis.pubsub.Receiver()
         self._reader_task = None
 
         self._subscribers = weakref.WeakSet()
+
+    @property
+    def loop(self):
+        return self._loop or asyncio.get_event_loop()
 
     async def _reader(self):
         try:

@@ -2,6 +2,7 @@ from .entities import *
 from .errors import *
 from .enums import *
 from .flags import *
+from .formatter import *
 
 __title__ = "xenon"
 __version__ = "0.0.1-pre"
