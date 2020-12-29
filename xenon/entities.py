@@ -168,6 +168,12 @@ class Guild(PartialGuild):
     def banner_url(self):
         return self.banner_url_as()
 
+    @property
+    def default_role(self):
+        for role in self.roles:
+            if role.id == self.id:
+                return role
+
     def icon_url_as(self, fmt=None, static_fmt="webp"):
         if self.icon is None:
             return None
@@ -202,9 +208,6 @@ class Guild(PartialGuild):
     async def fetch_channels(self):
         self.channels = await self.http.get_guild_channels(self.id)
         return self.channels
-
-    async def fetch_member(self):
-        pass
 
     async def fetch_bans(self):
         return []
@@ -258,12 +261,9 @@ class Channel(Entity):
     def can_send(self):
         return self.type == ChannelType.GUILD_TEXT or self.type == ChannelType.GUILD_NEWS
 
-    async def fetch_guild(self):
-        pass
-
 
 class Role(Entity):
-    __slots__ = ("name", "color", "hoist", "position", "permissions", "managed", "mentionable")
+    __slots__ = ("name", "color", "hoist", "position", "permissions", "managed", "mentionable", "guild_id")
 
     def __init__(self, data):
         super().__init__()
@@ -275,6 +275,7 @@ class Role(Entity):
         self.permissions = Permissions(int(data["permissions"]))
         self.managed = data["managed"]
         self.mentionable = data["mentionable"]
+        self.guild_id = data.get("guild_id")
 
     def to_dict(self):
         return {
@@ -285,11 +286,9 @@ class Role(Entity):
             "position": self.position,
             "permissions": self.permissions.value,
             "managed": self.managed,
-            "mentionable": self.mentionable
+            "mentionable": self.mentionable,
+            "guild_id": self.guild_id
         }
-
-    async def fetch_guild(self):
-        pass
 
 
 class User(Entity):
@@ -339,6 +338,9 @@ class User(Entity):
         else:
             return Asset(self._http, f"embed/avatars/{int(self.discriminator) % 5}.png")
 
+    def __str__(self):
+        return f"{self.name}#{self.discriminator}"
+
 
 class Member(User):
     __slots__ = ("_data", "nick", "roles", "joined_at", "premium_since", "deaf", "mute", "permissions")
@@ -379,6 +381,9 @@ class Member(User):
 
         else:
             return User(data)
+
+    def __str__(self):
+        return f"{self.name}#{self.discriminator}"
 
 
 class MessageReaction:

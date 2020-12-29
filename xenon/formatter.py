@@ -9,10 +9,11 @@ __all__ = (
 
 
 class FormatValue:
-    def __init__(self, title=None, color=None, emoji=None):
+    def __init__(self, title=None, color=None, emoji=None, footer=""):
         self.title = title
         self.color = color
         self.emoji = emoji
+        self.footer = footer
 
 
 class Format:
@@ -35,31 +36,32 @@ class Format:
     ERROR = FormatValue(
         title="Error",
         color=0xc64935,
-        emoji="<:error:777557308216967188>"
+        emoji="<:error:777557308216967188>",
+        footer="[Support](https://xenon.bot/discord) | [FAQ](http://wiki.xenon.bot/faq)"
     )
     PLEASE_WAIT = FormatValue(
         title="Please Wait",
-        color=0x36393e,
+        color=0x478fce,
         emoji="<a:working:777557383693729802>"
     )
 
 
-def create_message(text, f=Format.DEFAULT, embed=True):
+def create_message(text, f=Format.DEFAULT, title=None, embed=True):
     if embed:
         match = re.match(r"<(a?):\w+:([0-9]+)>", f.emoji)
         emoji_format = "png" if not match[1] else "gif"
         return {
             "embeds": [{
                 "author": {
-                    "name": f.title,
+                    "name": title or f.title,
                     "icon_url": f"https://cdn.discordapp.com/emojis/{match[2]}.{emoji_format}"
                 },
                 "color": f.color,
-                "description": text
+                "description": f"{text}\n\n{f.footer}"
             }]
         }
 
     else:
         return {
-            "content": f"{f.emoji} **{f.title}**\n\n{text}"
+            "content": f"{f.emoji} **{title or f.title}**\n\n{text}\n\n{f.footer}"
         }
