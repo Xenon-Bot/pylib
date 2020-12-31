@@ -155,8 +155,8 @@ class HTTPClient:
                 headers["Content-Type"] = "application/json"
                 kwargs["data"] = orjson.dumps(data)
 
-        if kwargs.get("reason") is not None:
-            headers["X-Audit-Log-Reason"] = urlquote(kwargs.pop("reason"), safe="/ ")
+        if "reason" in kwargs:
+            headers["X-Audit-Log-Reason"] = urlquote(kwargs.pop("reason") or "", safe="/ ")
 
         async with self._session.request(
                 method=req.method,
