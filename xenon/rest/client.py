@@ -155,7 +155,7 @@ class HTTPClient:
                 headers["Content-Type"] = "application/json"
                 kwargs["data"] = orjson.dumps(data)
 
-        if "reason" in kwargs:
+        if kwargs.get("reason") is not None:
             headers["X-Audit-Log-Reason"] = urlquote(kwargs.pop("reason"), safe="/ ")
 
         async with self._session.request(
@@ -534,5 +534,10 @@ class HTTPClient:
 
     def get_app_info(self):
         req = Request("GET", "/oauth2/applications/@me")
+        self.start_request(req)
+        return req
+
+    def get_template(self, template_id):
+        req = Request("GET", "/guilds/templates/{template_id}", template_id=template_id)
         self.start_request(req)
         return req

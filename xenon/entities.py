@@ -273,7 +273,7 @@ class Role(Entity):
         self.hoist = data["hoist"]
         self.position = data["position"]
         self.permissions = Permissions(int(data["permissions"]))
-        self.managed = data["managed"]
+        self.managed = data.get("managed", False)
         self.mentionable = data["mentionable"]
         self.guild_id = data.get("guild_id")
 
