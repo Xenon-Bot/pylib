@@ -214,7 +214,7 @@ def cooldown(rate: int, per: int, bucket=CooldownType.AUTHOR, manual=False):
 
 
 @dc.Check
-def not_in_maintenance(ctx, **_):
+async def not_in_maintenance(ctx, **_):
     in_maintenance = await ctx.bot.redis.exists("cmd:maintenance")
     if in_maintenance:
         await ctx.respond(**create_message(
