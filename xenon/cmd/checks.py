@@ -11,7 +11,8 @@ __all__ = (
     "is_bot_owner",
     "is_guild_owner",
     "has_permissions_level",
-    "PermissionLevels"
+    "PermissionLevels",
+    "not_in_maintenance"
 )
 
 
@@ -210,3 +211,17 @@ def cooldown(rate: int, per: int, bucket=CooldownType.AUTHOR, manual=False):
         return True
 
     return _check
+
+
+@dc.Check
+def not_in_maintenance(ctx, **_):
+    in_maintenance = await ctx.bot.redis.exists("cmd:maintenance")
+    if in_maintenance:
+        await ctx.respond(**create_message(
+            "The bot is currently in **maintenance**. This command can not be used during maintenance,"
+            " please be patient and **try again in a few minutes**.",
+            f=Format.ERROR
+        ))
+        return
+
+    return True
