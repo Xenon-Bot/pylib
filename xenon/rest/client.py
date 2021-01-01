@@ -453,8 +453,11 @@ class HTTPClient:
     def get_pinned_channel_messages(self):
         pass
 
-    def get_channel_message(self):
-        pass
+    def get_channel_message(self, channel, message):
+        req = Request("GET", "/channels/{channel_id}/messages/{message_id}", converter=Message,
+                      channel_id=entity_or_id(channel), message_id=entity_or_id(message))
+        self.start_request(req)
+        return req
 
     def create_message(self):
         pass
@@ -520,8 +523,30 @@ class HTTPClient:
     def create_dm(self):
         pass
 
-    def create_webhook(self):
-        pass
+    def get_channel_webhooks(self, channel):
+        def _converter(data):
+            return [Webhook(r) for r in data]
+
+        req = Request("GET", "/channels/{channel_id}/webhooks",
+                      converter=_converter, channel_id=entity_or_id(channel))
+        self.start_request(req)
+        return req
+
+    def get_guild_webhooks(self, guild):
+        def _converter(data):
+            return [Webhook(r) for r in data]
+
+        req = Request("GET", "/guilds/{guild_id}/webhooks",
+                      converter=_converter, guild_id=entity_or_id(guild))
+        self.start_request(req)
+        return req
+
+    def create_webhook(self, channel, reason=None, **options):
+        req = Request("POST", "/channels/{channel_id}/webhooks",
+                      converter=Webhook, channel_id=entity_or_id(channel))
+        json = make_json(options, ("name", "avatar"))
+        self.start_request(req, json=json, reason=reason)
+        return req
 
     def execute_webhook(self):
         pass

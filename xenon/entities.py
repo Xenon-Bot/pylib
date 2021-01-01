@@ -14,7 +14,8 @@ __all__ = (
     "Member",
     "MessageReaction",
     "MessageAttachment",
-    "Message"
+    "Message",
+    "Webhook"
 )
 
 DISCORD_EPOCH = 1420070400000
@@ -325,18 +326,18 @@ class User(Entity):
         return self.avatar_url_as()
 
     def avatar_url_as(self, fmt=None, static_fmt="webp"):
-        if self.avatar is None:
+        if self.avatar is not None:
             if fmt is not None:
-                return Asset(self._http, f"avatars/{self.id}/{self.avatar}.{fmt}")
+                return Asset(None, f"avatars/{self.id}/{self.avatar}.{fmt}")
 
             elif self.avatar.startswith("a_"):
-                return Asset(self._http, f"avatars/{self.id}/{self.avatar}.gif")
+                return Asset(None, f"avatars/{self.id}/{self.avatar}.gif")
 
             else:
-                return Asset(self._http, f"avatars/{self.id}/{self.avatar}.{static_fmt}")
+                return Asset(None, f"avatars/{self.id}/{self.avatar}.{static_fmt}")
 
         else:
-            return Asset(self._http, f"embed/avatars/{int(self.discriminator) % 5}.png")
+            return Asset(None, f"embed/avatars/{int(self.discriminator) % 5}.png")
 
     def __str__(self):
         return f"{self.name}#{self.discriminator}"
@@ -470,3 +471,25 @@ class Message(Entity):
 
     async def delete_user_reaction(self, emoji, user):
         return self.http.delete_user_reaction(self, emoji, user)
+
+
+class Webhook(Entity):
+    __slots__ = ("_data", "type", "guild_id", "channel_id", "user", "name", "avatar", "token", "application_id")
+
+    def __init__(self, data):
+        super().__init__()
+        self._data = data
+
+        self.id = data["id"]
+        self.type = None
+        self.guild_id = data.get("guild_id")
+        self.channel_id = data.get("channel_id")
+        self.user = User(data["user"]) if "user" in data else None
+        self.name = data["name"]
+        self.avatar = data["avatar"]
+        self.token = data["token"]
+        self.application_id = data.get("application_id")
+
+    @property
+    def url(self):
+        return "https://discord.com/api/v8/webhooks/{0.id}/{0.token}".format(self)
