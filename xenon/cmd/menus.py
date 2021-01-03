@@ -48,10 +48,11 @@ class ListMenu:
     embed_kwargs = {}
     per_page = 10
 
-    def __init__(self, ctx, msg=None):
+    def __init__(self, ctx, msg=None, **options):
         self.ctx = ctx
         self.msg = msg
         self.page = 0
+        self.options = options
 
     async def get_items(self):
         return []

@@ -548,8 +548,12 @@ class HTTPClient:
         self.start_request(req, json=json, reason=reason)
         return req
 
-    def execute_webhook(self):
-        pass
+    def execute_webhook(self, webhook, **options):
+        req = Request("POST", "/webhooks/{webhook_id}/{webhook_token}",
+                      webhook_id=webhook.id, webhook_token=webhook.token)
+        json = make_json(options)
+        self.start_request(req, json=json)
+        return req
 
     def edit_webhook(self):
         pass

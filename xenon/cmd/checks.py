@@ -199,7 +199,7 @@ def cooldown(rate: int, per: int, bucket=CooldownType.AUTHOR, manual=False):
             remaining = await ctx.bot.redis.ttl(key)
             await ctx.respond(**create_message(
                 f"This **command** is currently on **cooldown**.\n"
-                f"You have to **wait `{remaining}` seconds** until you can use it again.",
+                f"You have to **wait `{remaining}` second(s)** until you can use it again.",
                 embed=False,
                 f=Format.ERROR
             ), ephemeral=True)
