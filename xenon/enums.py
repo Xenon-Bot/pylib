@@ -9,7 +9,8 @@ __all__ = (
     "VerificationLevel",
     "MessageType",
     "WebhookType",
-    "PremiumType"
+    "PremiumType",
+    "PremiumTier"
 )
 
 

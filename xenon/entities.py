@@ -142,7 +142,7 @@ class Guild(PartialGuild):
         self.vanity_url_code = data["vanity_url_code"]
         self.description = data["description"]
         self.banner = data["banner"]
-        self.premium_tier = PremiumType(data["premium_tier"])
+        self.premium_tier = PremiumTier(data["premium_tier"])
         self.premium_subscription_count = data.get("premium_subscription_count")
         self.preferred_locale = data["preferred_locale"]
         self.public_updates_channel_id = data["public_updates_channel_id"]
