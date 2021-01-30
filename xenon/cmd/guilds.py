@@ -179,7 +179,7 @@ class GuildLoader:
         self.reason = reason
         self.options = options or {}
         self.ignore_ids = ignore or []
-        self.ids = {}
+        self.ids = {data["id"]: guild_id}
 
     async def _delete_roles(self):
         existing = [
