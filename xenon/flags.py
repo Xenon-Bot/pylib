@@ -215,6 +215,8 @@ class PermissionOverwrites:
             if value is True:
                 setattr(result, key, False)
 
+        return result
+
     def pair(self):
         allow = Permissions.none()
         deny = Permissions.none()

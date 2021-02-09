@@ -365,8 +365,8 @@ class Member(User):
     def from_message(cls, data):
         if "member" in data:
             return cls({
-                "user": data["author"],
-                **data.get["member"]
+                "user": data["user"],
+                **data["member"]
             })
 
         else:
@@ -485,8 +485,8 @@ class Webhook(Entity):
         self.guild_id = data.get("guild_id")
         self.channel_id = data.get("channel_id")
         self.user = User(data["user"]) if "user" in data else None
-        self.name = data["name"]
-        self.avatar = data["avatar"]
+        self.name = data.get("name")
+        self.avatar = data.get("avatar")
         self.token = data["token"]
         self.application_id = data.get("application_id")
 

@@ -1,6 +1,7 @@
 import asyncio
 from collections import OrderedDict
 import traceback
+import orjson
 
 from ..rest import *
 from ..enums import *
@@ -15,6 +16,14 @@ __all__ = (
     "status_text",
     "option_text"
 )
+
+
+async def create_chatlog(http, channel_id, count, before=None):
+    pass
+
+
+async def load_chatlog(http, channel_id, messages):
+    pass
 
 
 class GuildSaver:
@@ -59,15 +68,21 @@ class GuildSaver:
         ]
 
     async def _save_members(self):
-        self.data["members"] = [
-            {
-                "id": member.id,
-                "name": member.name,
-                "nick": member.nick,
-                "roles": member.roles
-            }
-            for member in []
-        ]
+        self.data["members"] = []
+        after = "0"
+        while True:
+            members = await self.http.get_guild_members(self.guild, limit=1000, after=after)
+            if len(members) == 0:
+                break
+
+            for member in members:
+                self.data["members"].append({
+                    "id": member.id,
+                    "name": member.name,
+                    "nick": member.nick,
+                    "roles": member.roles
+                })
+                after = member.id
 
     async def _save_messages(self):
         def add_author(member):
@@ -84,15 +99,17 @@ class GuildSaver:
                 })
 
         def serialize_message(msg):
-            add_author(msg.author)
             return {
                 "id": msg.id,
                 "content": msg.content,
-                "author_id": msg.author.id,
+                "author": {
+                    "id": msg.author.id,
+                    "name": msg.author.name
+                },
                 "attachments": [
                     {
-                        "filename": attachment["filename"],
-                        "url": attachment["url"]
+                        "filename": attachment.filename,
+                        "url": attachment.url
                     }
                     for attachment in msg.attachments
                 ],
@@ -105,12 +122,25 @@ class GuildSaver:
             if channel.type not in {ChannelType.GUILD_TEXT, ChannelType.GUILD_NEWS}:
                 continue
 
-            if self.chatlog > 0:
-                # TODO: save chatlog
-                pass
-
             # TODO: save pins
-            pass
+
+            if self.chatlog == 0:
+                continue
+
+            channel_messages = self.data["messages"][channel.id] = []
+            before = None
+            while len(channel_messages) < self.chatlog:
+                messages = await self.http.get_channel_messages(channel, limit=100, before=before)
+                if len(messages) == 0:
+                    break
+
+                for message in messages:
+                    # add_author(message.author)
+                    channel_messages.append(serialize_message(message))
+                    before = message.id
+
+                    if len(channel_messages) >= self.chatlog:
+                        break
 
     async def save(self, **options):
         savers = OrderedDict(
@@ -348,10 +378,7 @@ async def run_loader(loader):
         task = loop.create_task(coro)
         while not task.done():
             await bot.redis.setex(redis_key, 10, option)
-            await asyncio.sleep(3)
-            if not await bot.redis.exists(redis_key):
-                task.cancel()
-                raise asyncio.CancelledError()
+            await asyncio.sleep(5)
 
         try:
             task.result()

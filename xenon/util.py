@@ -1,5 +1,6 @@
 import random
-from datetime import datetime, timedelta
+from datetime import datetime
+import zlib
 
 
 __all__ = (
@@ -41,3 +42,36 @@ def unique_id():
 
 def timestamp_from_id(uid):
     return datetime.utcfromtimestamp((base36_loads(uid) >> 8) / 1000)
+
+
+def chunk_blob(blob: bytes, size_limit=7000000):
+    """
+    Chunk bytes into up to 256 chunks with size of up to 'size_limit' bytes
+    """
+    compressed = bytearray(zlib.compress(blob))
+    chunks = []
+
+    chunk_number = 0
+    while len(compressed) > size_limit:
+        chunk = compressed[:size_limit]
+        compressed = compressed[size_limit:]
+
+        chunk.insert(0, chunk_number)
+        chunks.append(bytes(chunk))
+
+        chunk_number += 1
+
+    if len(compressed) > 0:
+        compressed.insert(0, chunk_number)
+        chunks.append(bytes(compressed))
+
+    return chunks
+
+
+def combine_chunks(chunks):
+    sorted_chunks = sorted([bytearray(c) for c in chunks], key=lambda c: c[0])
+    result = bytearray()
+    for chunk in sorted_chunks:
+        result.extend(chunk[1:])
+
+    return zlib.decompress(bytes(result))

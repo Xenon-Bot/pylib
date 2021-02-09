@@ -12,6 +12,7 @@ from .errors import *
 __all__ = (
     "Request",
     "HTTPClient",
+    "File"
 )
 
 
@@ -72,7 +73,7 @@ class File:
         self.fp.close = lambda: None
 
     def reset(self):
-        self.fp.seek(self._original_pos)
+        self.fp.seek(0)
 
     def close(self):
         self.fp.close = self._closer
@@ -204,7 +205,7 @@ class HTTPClient:
                 req.set_exception(HTTPNotFound(resp, data))
 
             elif resp.status == 400:
-                req.set_exception(HTTPNotFound(resp, data))
+                req.set_exception(HTTPBadRequest(resp, data))
 
             elif resp.status in (401, 405):
                 req.set_exception(HTTPException(resp, data))
@@ -213,21 +214,26 @@ class HTTPClient:
                 raise HTTPException(resp, data)
 
     async def _request_task(self, req, files=None, **kwargs):
-        if files is not None:
-            data = kwargs.get("data", aiohttp.FormData())
-            if "json" in kwargs:
-                data.add_field("payload_json", orjson.dumps(kwargs.pop("json")))
+        try:
+            if files is not None:
+                data = kwargs.get("data", aiohttp.FormData())
+                if "json" in kwargs:
+                    data.add_field("payload_json", orjson.dumps(kwargs.pop("json")).decode("utf-8"))
 
-            for file in files:
-                data.add_field('file', file.fp, filename=file.filename, content_type='application/octet-stream')
+                for file in files:
+                    data.add_field('file', file.fp, filename=file.filename, content_type='application/octet-stream')
+
+                kwargs["data"] = data
+        except Exception as e:
+            req.set_exception(e)
 
         last_error = None
         for i in range(req.max_tries):
-            if files is not None:
-                for file in files:
-                    file.reset()
-
             try:
+                if files is not None:
+                    for file in files:
+                        file.reset()
+
                 await self._check_ratelimits(req)
                 await self._perform_request(req, **kwargs)
                 break
@@ -292,13 +298,18 @@ class HTTPClient:
         self.start_request(req, json=json, reason=reason)
         return req
 
-    def get_guild_members(self, guild, after=None):
+    def get_guild_members(self, guild, after=None, limit=1000):
         def _converter(data):
             return [Member(m) for m in data]
 
         req = Request("GET", "/guilds/{guild_id}/members",
                       converter=_converter, guild_id=entity_or_id(guild))
-        self.start_request(req, params={"after": entity_or_id(after)})
+
+        params = {"limit": str(limit)}
+        if after is not None:
+            params["after"] = entity_or_id(after)
+
+        self.start_request(req, params=params)
         return req
 
     def get_guild_member(self, guild, user):
@@ -447,11 +458,28 @@ class HTTPClient:
     def create_channel_invite(self):
         pass
 
-    def get_channel_messages(self):
-        pass
+    def get_channel_messages(self, channel, limit=100, before=None):
+        def _converter(data):
+            return [Message(m) for m in data]
 
-    def get_pinned_channel_messages(self):
-        pass
+        req = Request("GET", "/channels/{channel_id}/messages", converter=_converter,
+                      channel_id=entity_or_id(channel))
+
+        params = {"limit": str(limit)}
+        if before is not None:
+            params["before"] = entity_or_id(before)
+
+        self.start_request(req, params=params)
+        return req
+
+    def get_pinned_channel_messages(self, channel):
+        def _converter(data):
+            return [Message(m) for m in data]
+
+        req = Request("GET", "/channels/{channel_id}/pins", converter=_converter,
+                      channel_id=entity_or_id(channel))
+        self.start_request(req)
+        return req
 
     def get_channel_message(self, channel, message):
         req = Request("GET", "/channels/{channel_id}/messages/{message_id}", converter=Message,
@@ -459,11 +487,17 @@ class HTTPClient:
         self.start_request(req)
         return req
 
-    def create_message(self):
-        pass
+    def create_message(self, channel, content=None, **kwargs):
+        req = Request("POST", "/channels/{channel_id}/messages", converter=Message,
+                      channel_id=entity_or_id(channel))
+        self.start_request(req, json={"content": content, **kwargs})
+        return req
 
-    def edit_message(self):
-        pass
+    def edit_message(self, channel, message, content, **kwargs):
+        req = Request("PATCH", "/channels/{channel_id}/messages/{message_id}", converter=Message,
+                      channel_id=entity_or_id(channel), message_id=entity_or_id(message))
+        self.start_request(req, json={"content": content, **kwargs})
+        return req
 
     def pin_message(self):
         pass
@@ -504,8 +538,10 @@ class HTTPClient:
         self.start_request(req)
         return req
 
-    def get_user(self):
-        pass
+    def get_user(self, user):
+        req = Request("GET", "/users/{user_id}", user_id=entity_or_id(user), converter=User)
+        self.start_request(req)
+        return req
 
     def get_me(self):
         req = Request("GET", "/users/@me", converter=User)

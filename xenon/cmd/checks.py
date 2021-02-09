@@ -1,8 +1,10 @@
 import dc_interactions as dc
 from enum import IntEnum
 from xenon import *
+from os import environ as env
 
 from .formatter import *
+from ..rest import HTTPNotFound
 
 
 __all__ = (
@@ -12,7 +14,9 @@ __all__ = (
     "is_guild_owner",
     "has_permissions_level",
     "PermissionLevels",
-    "not_in_maintenance"
+    "not_in_maintenance",
+    "PremiumLevel",
+    "is_premium"
 )
 
 
@@ -225,3 +229,56 @@ async def not_in_maintenance(ctx, **_):
         return
 
     return True
+
+
+SUPPORT_GUILD = env.get("SUPPORT_GUILD")
+
+
+class PremiumLevel(IntEnum):
+    NONE = 0
+    ONE = 1
+    TWO = 2
+    THREE = 3
+
+
+def is_premium(level=PremiumLevel.ONE):
+    @dc.Check
+    async def _check(ctx, **_):
+        try:
+            member = await ctx.bot.http.get_guild_members(SUPPORT_GUILD, ctx.author.id)
+        except HTTPNotFound:
+            await ctx.respond(**create_message(
+                f"This command **can only be used by users with the premium level `{level.name}` or higher**.\n"
+                f"Your current premium level is `{PremiumLevel.NONE.name}`. "
+                f"[Upgrade Here](https://www.patreon.com/merlinfuchs)",
+                embed=False,
+                f=Format.ERROR
+            ), ephemeral=True)
+
+        guild = await ctx.bot.http.get_guild(SUPPORT_GUILD)
+
+        current = 0
+        prefix = "Premium "
+        for role in filter(lambda r: r in member.roles, guild.roles):
+            if role.name.startswith(prefix):
+                try:
+                    value = int(role.name.strip(prefix))
+                except ValueError:
+                    continue
+
+                if value > current:
+                    current = value
+
+        current_level = PremiumLevel(current)
+        ctx.premium = current_level
+
+        if current < level.value:
+            await ctx.respond(**create_message(
+                f"This command **can only be used by users with the premium level `{level.name}` or higher**.\n"
+                f"Your current premium level is `{current_level.name}`. "
+                f"[Upgrade Here](https://www.patreon.com/merlinfuchs)",
+                embed=False,
+                f=Format.ERROR
+            ), ephemeral=True)
+
+    return _check
