@@ -487,7 +487,7 @@ class Webhook(Entity):
         self.user = User(data["user"]) if "user" in data else None
         self.name = data.get("name")
         self.avatar = data.get("avatar")
-        self.token = data["token"]
+        self.token = data.get("token")
         self.application_id = data.get("application_id")
 
     @property
