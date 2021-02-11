@@ -481,7 +481,7 @@ class Webhook(Entity):
         self._data = data
 
         self.id = data["id"]
-        self.type = None
+        self.type = WebhookType(data["type"])
         self.guild_id = data.get("guild_id")
         self.channel_id = data.get("channel_id")
         self.user = User(data["user"]) if "user" in data else None
