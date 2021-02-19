@@ -7,14 +7,15 @@ __all__ = (
     "HTTPException",
     "HTTPNotFound",
     "HTTPForbidden",
-    "HTTPBadRequest"
+    "HTTPBadRequest",
+    "HTTPTooManyRequests",
+    "HTTPUnauthorized"
 )
 
 
 class HTTPException(XenonException):
-    def __init__(self, resp, message):
-        self.response = resp
-        self.status = resp.status
+    def __init__(self, status, message):
+        self.status = status
         if isinstance(message, dict):
             self.code = message.get("code", 0)
             base = message.get("message", "")
@@ -29,17 +30,30 @@ class HTTPException(XenonException):
             self.text = message
             self.code = 0
 
-        fmt = '{0.status} {0.reason} (error code: {1}): {2}'
-        super().__init__(fmt.format(self.response, self.code, self.text))
+        fmt = '{0.status} (error code: {1}): {2}'
+        super().__init__(fmt.format(self, self.code, self.text))
 
 
 class HTTPBadRequest(HTTPException):
-    pass
+    def __init__(self, message):
+        super().__init__(400, message)
+
+
+class HTTPUnauthorized(HTTPException):
+    def __init__(self, message):
+        super().__init__(401, message)
 
 
 class HTTPForbidden(HTTPException):
-    pass
+    def __init__(self, message):
+        super().__init__(403, message)
 
 
 class HTTPNotFound(HTTPException):
-    pass
+    def __init__(self, message):
+        super().__init__(404, message)
+
+
+class HTTPTooManyRequests(HTTPException):
+    def __init__(self, message):
+        super().__init__(429, message)

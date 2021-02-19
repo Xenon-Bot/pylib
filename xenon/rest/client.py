@@ -6,11 +6,10 @@ from enum import Enum
 
 from ..entities import *
 from ..flags import *
-from .ratelimits import *
 from .errors import *
 
 __all__ = (
-    "Request",
+    "Route",
     "HTTPClient",
     "File"
 )
@@ -80,25 +79,29 @@ class File:
         self._closer()
 
 
-class Request:
+class BucketValues:
+    def __init__(self, delta, remaining=None, is_global=False):
+        self.delta = delta
+        self.remaining = remaining
+        self.is_global = is_global
+
+    async def wait(self):
+        if self.remaining == 0:
+            await asyncio.sleep(self.delta)
+
+
+class Route:
     BASE = 'https://discord.com/api/v8'
 
-    def __init__(self, method, path, max_tries=5, converter=None, **params):
+    def __init__(self, method, path, **params):
         self.method = method
         self.path = path.strip("/")
-        self.max_tries = max_tries
 
         self.url = f"{self.BASE}/{self.path}".format(**{k: urlquote(str(v)) for k, v in params.items()})
 
         self._channel_id = params.get("channel_id")
         self._guild_id = params.get("guild_id")
         self._webhook_id = params.get("webhook_id")
-
-        self.ratelimit = None
-        self.future = asyncio.Future()
-        self.task = None
-
-        self._converter = converter
 
     @property
     def bucket(self):
@@ -108,337 +111,197 @@ class Request:
         else:
             return '{0._channel_id}:{0._guild_id}:{0.path}'.format(self)
 
-    def cancel(self):
-        self.task.cancel()
 
-    def set_data(self, data):
-        if not self.future.done():
-            if self._converter is not None:
-                data = self._converter(data)
-
-            self.future.set_result(data)
-
-    def set_exception(self, exc):
-        if not self.future.done():
-            self.future.set_exception(exc)
-
-    def __await__(self):
-        return self.future.__await__()
-
-
-class HTTPClient:
-    def __init__(self, token, ratelimits, **kwargs):
-        self._token = token
-        self._ratelimits = ratelimits
-        self._session = kwargs.get("session")
-        self.loop = kwargs.get("loop", asyncio.get_event_loop())
-
-    async def _check_ratelimits(self, req):
-        global_rl = await self._ratelimits.get_global()
-        if global_rl is not None:
-            req.ratelimit = global_rl
-            await global_rl.wait()
-
-        bucket_rl = await self._ratelimits.get_bucket(req.bucket)
-        if bucket_rl is not None:
-            req.ratelimit = bucket_rl
-            await bucket_rl.wait()
-
-    async def _perform_request(self, req, **kwargs):
-        headers = {
-            "User-Agent": "",
-            "Authorization": f"Bot {self._token}"
-        }
-
-        if "json" in kwargs:
-            data = kwargs.pop("json")
-            if data is not None:
-                headers["Content-Type"] = "application/json"
-                kwargs["data"] = orjson.dumps(data)
-
-        if "reason" in kwargs:
-            headers["X-Audit-Log-Reason"] = urlquote(kwargs.pop("reason") or "", safe="/ ")
-
-        async with self._session.request(
-                method=req.method,
-                url=req.url,
-                headers=headers,
-                raise_for_status=False,
-                **kwargs
-        ) as resp:
-            data = await json_or_text(resp)
-
-            if 300 > resp.status >= 200:
-                remaining = resp.headers.get('X-Ratelimit-Remaining')
-                reset_after = resp.headers.get('X-Ratelimit-Reset-After')
-                if remaining is not None and reset_after is not None:
-                    req.ratelimit = Ratelimit(float(reset_after), int(remaining))
-                    await self._ratelimits.set_bucket(req.bucket, float(reset_after), int(remaining))
-
-                req.set_data(data)
-
-            elif resp.status == 429:
-                if resp.headers.get('Via'):
-                    retry_after = data['retry_after']
-                    is_global = data.get('global', False)
-                    if is_global:
-                        req.ratelimit = Ratelimit(retry_after, 0, is_global=True)
-                        await self._ratelimits.set_global(retry_after)
-
-                    else:
-                        req.ratelimit = Ratelimit(retry_after, 0)
-                        await self._ratelimits.set_bucket(req.bucket, retry_after, 0)
-
-                    raise HTTPException(resp, data)
-
-                else:
-                    # Probably banned by cloudflare
-                    req.set_exception(HTTPException(resp, data))
-
-            elif resp.status >= 500:
-                raise HTTPException(resp, data)
-
-            elif resp.status == 403:
-                req.set_exception(HTTPForbidden(resp, data))
-
-            elif resp.status == 404:
-                req.set_exception(HTTPNotFound(resp, data))
-
-            elif resp.status == 400:
-                req.set_exception(HTTPBadRequest(resp, data))
-
-            elif resp.status in (401, 405):
-                req.set_exception(HTTPException(resp, data))
-
-            else:
-                raise HTTPException(resp, data)
-
-    async def _request_task(self, req, files=None, **kwargs):
-        try:
-            if files is not None:
-                data = kwargs.get("data", aiohttp.FormData())
-                if "json" in kwargs:
-                    data.add_field("payload_json", orjson.dumps(kwargs.pop("json")).decode("utf-8"))
-
-                for file in files:
-                    data.add_field('file', file.fp, filename=file.filename, content_type='application/octet-stream')
-
-                kwargs["data"] = data
-        except Exception as e:
-            req.set_exception(e)
-
-        last_error = None
-        for i in range(req.max_tries):
-            try:
-                if files is not None:
-                    for file in files:
-                        file.reset()
-
-                await self._check_ratelimits(req)
-                await self._perform_request(req, **kwargs)
-                break
-            except HTTPException as e:
-                last_error = e
-                await asyncio.sleep(i)
-            except Exception as e:
-                req.set_exception(e)
-                break
-        else:
-            req.set_exception(last_error)
-
-    def start_request(self, req, **kwargs):
-        if self._session is None:
-            self._session = aiohttp.ClientSession(loop=self.loop)
-
-        req.task = self.loop.create_task(self._request_task(req, **kwargs))
-        return req.task
+class RouteMixin:
+    async def request(self, *args, **kwargs):
+        # Must be overwritten by the deriving client
+        pass
 
     def get_guild(self, guild):
-        req = Request("GET", "/guilds/{guild_id}",
-                      converter=Guild, guild_id=entity_or_id(guild))
-        self.start_request(req)
-        return req
+        return self.request(
+            Route("GET", "/guilds/{guild_id}", guild_id=entity_or_id(guild)),
+            converter=Guild
+        )
 
     def edit_guild(self, guild, **options):
-        req = Request("PATCH", "/guilds/{guild_id}",
-                      converter=Guild, guild_id=entity_or_id(guild))
-
         allowed_keys = ("name", "region", "verification_level", "default_message_notifications",
                         "explicit_content_filter", "afk_channel_id", "adk_timeout", "icon", "owner_id",
                         "splash", "banner", "system_channel_id", "rules_channel_id", "public_updates_channel_id",
                         "preferred_locale")
-        json = make_json(options, allowed_keys)
-        self.start_request(req, json=json)
-        return req
+
+        return self.request(
+            Route("PATCH", "/guilds/{guild_id}", guild_id=entity_or_id(guild)),
+            converter=Guild,
+            json=make_json(options, allowed_keys)
+        )
 
     def delete_guild(self, guild):
-        req = Request("DELETE", "/guilds/{guild_id}", guild_id=guild.id)
-        self.start_request(req)
-        return req
+        return self.request(Route("DELETE", "/guilds/{guild_id}", guild_id=guild.id))
 
     def get_guild_channels(self, guild):
         def _converter(data):
             return [Channel(c) for c in data]
 
-        req = Request("GET", "/guilds/{guild_id}/channels",
-                      converter=_converter, guild_id=entity_or_id(guild))
-        self.start_request(req)
-        return req
+        return self.request(
+            Route("GET", "/guilds/{guild_id}/channels", guild_id=entity_or_id(guild)),
+            converter=_converter
+        )
 
     def create_guild_channel(self, guild, reason=None, **options):
-        req = Request("POST", "/guilds/{guild_id}/channels",
-                      converter=Channel, guild_id=entity_or_id(guild))
-
         allowed_keys = ("name", "type", "topic", "bitrate", "user_limit", "rate_limit_per_user", "position",
                         "permission_overwrites", "parent_id", "nsfw")
         converters = {
             # "permission_overwrites": lambda v: v  # TODO: actually convert
         }
-        json = make_json(options, allowed_keys, converters)
-        self.start_request(req, json=json, reason=reason)
-        return req
+        return self.request(
+            Route("POST", "/guilds/{guild_id}/channels", guild_id=entity_or_id(guild)),
+            converter=Channel,
+            json=make_json(options, allowed_keys, converters),
+            reason=reason
+        )
 
     def get_guild_members(self, guild, after=None, limit=1000):
         def _converter(data):
             return [Member(m) for m in data]
 
-        req = Request("GET", "/guilds/{guild_id}/members",
-                      converter=_converter, guild_id=entity_or_id(guild))
-
         params = {"limit": str(limit)}
         if after is not None:
             params["after"] = entity_or_id(after)
 
-        self.start_request(req, params=params)
-        return req
+        return self.request(
+            Route("GET", "/guilds/{guild_id}/members", guild_id=entity_or_id(guild)),
+            converter=_converter,
+            params=params
+        )
 
     def get_guild_member(self, guild, user):
-        req = Request("GET", "/guilds/{guild_id}/members/{user_id}", converter=Member,
-                      guild_id=entity_or_id(guild), user_id=entity_or_id(user))
-        self.start_request(req)
-        return req
+        return self.request(
+            Route("GET", "/guilds/{guild_id}/members/{user_id}",
+                  guild_id=entity_or_id(guild), user_id=entity_or_id(user)),
+            converter=Member
+        )
 
-    def edit_guild_member(self, member, **options):
-        req = Request("PATCH", "/guilds/{guild_id}/members/{user_id}",
-                      guild_id=member.guild_id, user_id=member.id)
-
+    def edit_guild_member(self, guild, user, **options):
         allowed_keys = ("nick", "roles", "mute", "deaf", "channel_id")
         converters = {
             "roles": lambda rs: [entity_or_id(r) for r in rs]
         }
         json = make_json(options, allowed_keys, converters)
-        self.start_request(req, json=json)
-        return req
+        return self.request(
+            Route("GET", "/guilds/{guild_id}/members/{user_id}",
+                  guild_id=entity_or_id(guild), user_id=entity_or_id(user)),
+            json=json
+        )
 
-    def remove_guild_member_role(self, member, role):
-        req = Request("DELETE", "/guilds/{guild_id}/members/{user_id}/roles/{role_id}",
-                      guild_id=member.guild_id, user_id=member.id, role_id=entity_or_id(role))
+    def remove_guild_member_role(self, guild, user, role):
+        return self.request(
+            Route("DELETE", "/guilds/{guild_id}/members/{user_id}/roles/{role_id}",
+                  guild_id=entity_or_id(guild), user_id=entity_or_id(user), role_id=entity_or_id(role))
+        )
 
-        self.start_request(req)
-        return req
+    def add_guild_member_role(self, guild, user, role):
+        return self.request(
+            Route("PUT", "/guilds/{guild_id}/members/{user_id}/roles/{role_id}",
+                  guild_id=entity_or_id(guild), user_id=entity_or_id(user), role_id=entity_or_id(role))
+        )
 
-    def add_guild_member_role(self, member, role):
-        req = Request("PUT", "/guilds/{guild_id}/members/{user_id}/roles/{role_id}",
-                      guild_id=member.guild_id, user_id=member.id, role_id=entity_or_id(role))
-
-        self.start_request(req)
-        return req
-
-    def remove_guild_member(self, member):
-        req = Request("DELETE", "/guilds/{guild_id}/members/{user_id}",
-                      guild_id=member.guild_id, user_id=member.id)
-
-        self.start_request(req)
-        return req
+    def remove_guild_member(self, guild, user):
+        return self.request(
+            Route("DELETE", "/guilds/{guild_id}/members/{user_id}",
+                  guild_id=entity_or_id(guild), user_id=entity_or_id(user)),
+        )
 
     def get_guild_bans(self, guild):
-        req = Request("GET", "/guilds/{guild_id}/bans",
-                      guild_id=entity_or_id(guild))
-        self.start_request(req)
-        return req
+        # TODO: converter
+        return self.request(
+            Route("GET", "/guilds/{guild_id}/bans", guild_id=entity_or_id(guild))
+        )
 
     def get_guild_ban(self, guild, user):
-        req = Request("GET", "/guilds/{guild_id}/bans/{user_id}",
-                      guild_id=entity_or_id(guild), user_id=entity_or_id(user))
-
-        self.start_request(req)
-        return req
+        # TODO: converter
+        return self.request(
+            Route("GET", "/guilds/{guild_id}/bans/{user_id}",
+                  guild_id=entity_or_id(guild), user_id=entity_or_id(user))
+        )
 
     def create_guild_ban(self, guild, user, **options):
-        req = Request("PUT", "/guilds/{guild_id}/bans/{user_id}",
-                      guild_id=entity_or_id(guild), user_id=entity_or_id(user))
-
         allowed_keys = ("delete_message_days", "reason")
-        json = make_json(options, allowed_keys)
-        self.start_request(req, json=json)
-        return req
+        return self.request(
+            Route("PUT", "/guilds/{guild_id}/bans/{user_id}",
+                  guild_id=entity_or_id(guild), user_id=entity_or_id(user)),
+            json=make_json(options, allowed_keys)
+        )
 
     def remove_guild_ban(self, guild, user):
-        req = Request("DELETE", "/guilds/{guild_id}/bans/{user_id}",
-                      guild_id=entity_or_id(guild), user_id=entity_or_id(user))
-
-        self.start_request(req)
-        return req
+        return self.request(
+            Route("PUT", "/guilds/{guild_id}/bans/{user_id}",
+                  guild_id=entity_or_id(guild), user_id=entity_or_id(user))
+        )
 
     def get_guild_roles(self, guild):
         def _converter(data):
             return [Role(r) for r in data]
 
-        req = Request("GET", "/guilds/{guild_id}/roles", converter=_converter, guild_id=entity_or_id(guild))
-        self.start_request(req)
-        return req
+        return self.request(
+            Route("GET", "/guilds/{guild_id}/roles", guild_id=entity_or_id(guild)),
+            converter=_converter
+        )
 
     def get_guild_role(self, guild, role):
-        req = Request("GET", "/guilds/{guild_id}/roles/{role_id}", converter=Role,
-                      guild_id=entity_or_id(guild), role_id=entity_or_id(role))
-        self.start_request(req)
-        return req
+        return self.request(
+            Route("GET", "/guilds/{guild_id}/roles/{role_id}",
+                  guild_id=entity_or_id(guild), role_id=entity_or_id(role)),
+            converter=Role
+        )
 
     def create_guild_role(self, guild, reason=None, **options):
-        req = Request("POST", "/guilds/{guild_id}/roles", converter=Role,
-                      guild_id=entity_or_id(guild))
-
         allowed_keys = ("name", "permissions", "color", "hoist", "mentionable")
-        json = make_json(options, allowed_keys)
-        self.start_request(req, json=json, reason=reason)
-        return req
+        return self.request(
+            Route("POST", "/guilds/{guild_id}/roles", guild_id=entity_or_id(guild)),
+            converter=Role,
+            json=make_json(options, allowed_keys),
+            reason=reason
+        )
 
     def edit_guild_role(self, guild, role, reason=None, **options):
-        req = Request("PATCH", "/guilds/{guild_id}/roles/{role_id}", converter=Role,
-                      guild_id=entity_or_id(guild), role_id=entity_or_id(role))
-
         allowed_keys = ("name", "permissions", "color", "hoist", "mentionable")
         json = make_json(options, allowed_keys)
-        self.start_request(req, json=json, reason=reason)
-        return req
+        return self.request(
+            Route("PATCH", "/guilds/{guild_id}/roles/{role_id}",
+                  guild_id=entity_or_id(guild), role_id=entity_or_id(role)),
+            converter=Role,
+            json=json,
+            reason=reason
+        )
 
     def delete_guild_role(self, guild, role, reason=None):
-        req = Request("DELETE", "/guilds/{guild_id}/roles/{role_id}",
-                      guild_id=entity_or_id(guild), role_id=entity_or_id(role))
-        self.start_request(req, reason=reason)
-        return req
+        return self.request(
+            Route("DELETE", "/guilds/{guild_id}/roles/{role_id}",
+                  guild_id=entity_or_id(guild), role_id=entity_or_id(role)),
+            reason=reason
+        )
 
     def get_guild_invites(self):
         pass
 
     def get_channel(self, channel):
-        req = Request("GET", "/channels/{channel_id}",
-                      converter=Channel, channel_id=entity_or_id(channel))
-        self.start_request(req)
-        return req
+        return self.request(
+            Route("GET", "/channels/{channel_id}", channel_id=entity_or_id(channel)),
+            converter=Channel
+        )
 
     def edit_channel(self, channel, reason=None, **options):
-        req = Request("PATCH", "/channels/{channel_id}",
-                      converter=Channel, channel_id=entity_or_id(channel))
-
         allowed_keys = ("name", "type", "topic", "bitrate", "user_limit", "rate_limit_per_user", "position",
                         "permission_overwrites", "parent_id", "nsfw")
         converters = {
             # "permission_overwrites": lambda v: v  # TODO: actually convert
         }
-        json = make_json(options, allowed_keys, converters)
-        self.start_request(req, json=json, reason=reason)
-        return req
+        return self.request(
+            Route("PATCH", "/channels/{channel_id}", channel_id=entity_or_id(channel)),
+            converter=Channel,
+            json=make_json(options, allowed_keys, converters),
+            reason=reason
+        )
 
     def edit_channel_permissions(self):
         pass
@@ -447,10 +310,10 @@ class HTTPClient:
         pass
 
     def delete_channel(self, channel, reason=None):
-        req = Request("DELETE", "/channels/{channel_id}",
-                      channel_id=entity_or_id(channel))
-        self.start_request(req, reason=reason)
-        return req
+        return self.request(
+            Route("DELETE", "/channels/{channel_id}", channel_id=entity_or_id(channel)),
+            reason=reason
+        )
 
     def get_channel_invites(self):
         pass
@@ -462,42 +325,45 @@ class HTTPClient:
         def _converter(data):
             return [Message(m) for m in data]
 
-        req = Request("GET", "/channels/{channel_id}/messages", converter=_converter,
-                      channel_id=entity_or_id(channel))
-
         params = {"limit": str(limit)}
         if before is not None:
             params["before"] = entity_or_id(before)
 
-        self.start_request(req, params=params)
-        return req
+        return self.request(
+            Route("GET", "/channels/{channel_id}/messages", channel_id=entity_or_id(channel)),
+            converter=_converter,
+            params=params
+        )
 
     def get_pinned_channel_messages(self, channel):
         def _converter(data):
             return [Message(m) for m in data]
 
-        req = Request("GET", "/channels/{channel_id}/pins", converter=_converter,
-                      channel_id=entity_or_id(channel))
-        self.start_request(req)
-        return req
+        return self.request(
+            Route("GET", "/channels/{channel_id}/pins", channel_id=entity_or_id(channel)),
+            converter=_converter
+        )
 
     def get_channel_message(self, channel, message):
-        req = Request("GET", "/channels/{channel_id}/messages/{message_id}", converter=Message,
-                      channel_id=entity_or_id(channel), message_id=entity_or_id(message))
-        self.start_request(req)
-        return req
+        return self.request(
+            Route("GET", "/channels/{channel_id}/messages/{message_id}",
+                  channel_id=entity_or_id(channel), message_id=entity_or_id(message)),
+            converter=Message
+        )
 
     def create_message(self, channel, content=None, **kwargs):
-        req = Request("POST", "/channels/{channel_id}/messages", converter=Message,
-                      channel_id=entity_or_id(channel))
-        self.start_request(req, json={"content": content, **kwargs})
-        return req
+        return self.request(
+            Route("POST", "/channels/{channel_id}/messages", channel_id=entity_or_id(channel)),
+            json={"content": content, **kwargs},
+            converter=Message
+        )
 
     def edit_message(self, channel, message, content, **kwargs):
-        req = Request("PATCH", "/channels/{channel_id}/messages/{message_id}", converter=Message,
-                      channel_id=entity_or_id(channel), message_id=entity_or_id(message))
-        self.start_request(req, json={"content": content, **kwargs})
-        return req
+        return self.request(
+            Route("PATCH", "/channels/{channel_id}/messages/{message_id}",
+                  channel_id=entity_or_id(channel), message_id=entity_or_id(message)),
+            converter=Message
+        )
 
     def pin_message(self):
         pass
@@ -514,44 +380,39 @@ class HTTPClient:
     def get_reactions(self):
         pass
 
-    def create_reaction(self, message, emoji):
-        req = Request("PUT", "/channels/{channel_id}/messages/{message_id}/reactions/{emoji}/@me",
-                      channel_id=message.channel_id, message_id=message.id, emoji=emoji)
-        self.start_request(req)
-        return req
+    def create_reaction(self, channel, message, emoji):
+        return self.request(Route("PUT", "/channels/{channel_id}/messages/{message_id}/reactions/{emoji}/@me",
+                                  channel_id=entity_or_id(channel), message_id=entity_or_id(message), emoji=emoji))
 
-    def delete_own_reaction(self, message, emoji):
-        req = Request("DELETE", "/channels/{channel_id}/messages/{message_id}/reactions/{emoji}/@me",
-                      channel_id=message.channel_id, message_id=message.id, emoji=emoji)
-        self.start_request(req)
-        return req
+    def delete_own_reaction(self, channel, message, emoji):
+        return self.request(Route("DELETE", "/channels/{channel_id}/messages/{message_id}/reactions/{emoji}/@me",
+                                  channel_id=entity_or_id(channel), message_id=entity_or_id(message), emoji=emoji))
 
-    def delete_user_reaction(self, message, emoji, user):
-        req = Request("DELETE", "/channels/{channel_id}/messages/{message_id}/reactions/{emoji}/{user_id}",
-                      channel_id=message.channel_id, message_id=message.id, emoji=emoji, user_id=entity_or_id(user))
-        self.start_request(req)
-        return req
+    def delete_user_reaction(self, channel, message, emoji, user):
+        return self.request(Route("DELETE", "/channels/{channel_id}/messages/{message_id}/reactions/{emoji}/{user_id}",
+                                  channel_id=entity_or_id(channel), message_id=entity_or_id(message), emoji=emoji,
+                                  user_id=entity_or_id(user)))
 
     def delete_all_reactions(self, message):
-        req = Request("DELETE", "/channels/{channel_id}/messages/{message_id}/reactions",
-                      channel_id=message.channel_id, message_id=message.id)
-        self.start_request(req)
-        return req
+        return self.request(
+            Route("DELETE", "/channels/{channel_id}/messages/{message_id}/reactions",
+                  channel_id=message.channel_id, message_id=message.id)
+        )
 
     def get_user(self, user):
-        req = Request("GET", "/users/{user_id}", user_id=entity_or_id(user), converter=User)
-        self.start_request(req)
-        return req
+        return self.request(
+            Route("GET", "/users/{user_id}", user_id=entity_or_id(user), converter=User)
+        )
 
     def get_me(self):
-        req = Request("GET", "/users/@me", converter=User)
-        self.start_request(req)
-        return req
+        return self.request(
+            Route("GET", "/users/@me", converter=User)
+        )
 
     def leave_guild(self, guild):
-        req = Request("DELETE", "/users/@me/guilds/{guild_id}", guild_id=entity_or_id(guild))
-        self.start_request(req)
-        return req
+        return self.request(
+            Route("DELETE", "/users/@me/guilds/{guild_id}", guild_id=entity_or_id(guild))
+        )
 
     def edit_me(self):
         pass
@@ -563,33 +424,35 @@ class HTTPClient:
         def _converter(data):
             return [Webhook(r) for r in data]
 
-        req = Request("GET", "/channels/{channel_id}/webhooks",
-                      converter=_converter, channel_id=entity_or_id(channel))
-        self.start_request(req)
-        return req
+        return self.request(
+            Route("GET", "/channels/{channel_id}/webhooks", channel_id=entity_or_id(channel)),
+            converter=_converter
+        )
 
     def get_guild_webhooks(self, guild):
         def _converter(data):
             return [Webhook(r) for r in data]
 
-        req = Request("GET", "/guilds/{guild_id}/webhooks",
-                      converter=_converter, guild_id=entity_or_id(guild))
-        self.start_request(req)
-        return req
+        return self.request(
+            Route("GET", "/guilds/{guild_id}/webhooks", guild_id=entity_or_id(guild)),
+            converter=_converter
+        )
 
     def create_webhook(self, channel, reason=None, **options):
-        req = Request("POST", "/channels/{channel_id}/webhooks",
-                      converter=Webhook, channel_id=entity_or_id(channel))
-        json = make_json(options, ("name", "avatar"))
-        self.start_request(req, json=json, reason=reason)
-        return req
+        return self.request(
+            Route("POST", "/channels/{channel_id}/webhooks",
+                  channel_id=entity_or_id(channel)),
+            json=make_json(options, ("name", "avatar"))
+        )
 
-    def execute_webhook(self, webhook, **options):
-        req = Request("POST", "/webhooks/{webhook_id}/{webhook_token}",
-                      webhook_id=webhook.id, webhook_token=webhook.token)
-        json = make_json(options)
-        self.start_request(req, json=json)
-        return req
+    def execute_webhook(self, webhook, wait=False, **options):
+        return self.request(
+            Route("POST", "/webhooks/{webhook_id}/{webhook_token}",
+                  webhook_id=webhook.id, webhook_token=webhook.token),
+            json=make_json(options),
+            params={"wait": wait},
+            converter=Message if wait else None
+        )
 
     def edit_webhook(self):
         pass
@@ -598,11 +461,155 @@ class HTTPClient:
         pass
 
     def get_app_info(self):
-        req = Request("GET", "/oauth2/applications/@me")
-        self.start_request(req)
-        return req
+        return self.request(
+            Route("GET", "/oauth2/applications/@me")
+        )
 
     def get_template(self, template_id):
-        req = Request("GET", "/guilds/templates/{template_id}", template_id=template_id)
-        self.start_request(req)
-        return req
+        return self.request(
+            Route("GET", "/guilds/templates/{template_id}", template_id=template_id)
+        )
+
+
+class HTTPClient(RouteMixin):
+    def __init__(self, token, redis, **kwargs):
+        self._token = token
+        self._redis = redis
+        self._session = kwargs.get("session")
+        self.loop = kwargs.get("loop", asyncio.get_event_loop())
+
+        self.max_retries = kwargs.get("max_retries", 5)
+        self.semaphore = None
+        self.semaphore = asyncio.Semaphore(kwargs.get("max_concurrency", 50))
+
+    async def get_bucket(self, bucket):
+        delta = await self._redis.pttl(f"ratelimits:{bucket}")
+        if delta <= 0:
+            return None
+
+        remaining = await self._redis.get(f"ratelimits:{bucket}")
+        if remaining is None:
+            return None
+
+        return BucketValues(delta / 1000, int(remaining))
+
+    async def set_bucket(self, bucket, remaining, delta):
+        await self._redis.setex(f"ratelimits:{bucket}", delta, remaining)
+
+    async def set_global(self, delta):
+        await self._redis.setex("ratelimits:global", delta, 0)
+
+    async def get_global(self, delta):
+        delta = await self._redis.pttl("ratelimits:global")
+        if delta < 0:
+            return None
+
+        return BucketValues(delta / 1000, remaining=0, is_global=True)
+
+    async def _perform_request(self, route, **kwargs):
+        headers = {
+            "User-Agent": "",
+            "Authorization": f"Bot {self._token}"
+        }
+
+        if "json" in kwargs:
+            data = kwargs.pop("json")
+            if data is not None:
+                headers["Content-Type"] = "application/json"
+                kwargs["data"] = orjson.dumps(data)
+
+        if "reason" in kwargs:
+            headers["X-Audit-Log-Reason"] = urlquote(kwargs.pop("reason") or "", safe="/ ")
+
+        async with self._session.request(
+                method=route.method,
+                url=route.url,
+                headers=headers,
+                raise_for_status=False,
+                **kwargs
+        ) as resp:
+            data = await json_or_text(resp)
+
+            if 300 > resp.status >= 200:
+                remaining = resp.headers.get('X-Ratelimit-Remaining')
+                reset_after = resp.headers.get('X-Ratelimit-Reset-After')
+                if remaining is not None and reset_after is not None:
+                    await self.set_bucket(route.bucket, int(remaining), float(reset_after))
+
+                return data
+
+            elif resp.status == 429:
+                if resp.headers.get('Via'):
+                    retry_after = data['retry_after']
+                    is_global = data.get('global', False)
+                    if is_global:
+                        await self.set_global(retry_after)
+
+                    else:
+                        await self.set_bucket(route.bucket, 0, retry_after)
+
+                else:
+                    # Most likely cloudflare banned
+                    await self.set_global(1)
+
+            raise HTTPException(resp.status, data)
+
+    async def request(self, route, converter=None, wait=True, files=None, **kwargs):
+        if self._session is None:
+            self._session = aiohttp.ClientSession(loop=self.loop)
+
+        if files is not None:
+            data = kwargs.get("data", aiohttp.FormData())
+            if "json" in kwargs:
+                data.add_field("payload_json", orjson.dumps(kwargs.pop("json")).decode("utf-8"))
+
+            for file in files:
+                data.add_field('file', file.fp, filename=file.filename, content_type='application/octet-stream')
+
+            kwargs["data"] = data
+
+        for i in range(self.max_retries):
+            try:
+                if files is not None:
+                    for file in files:
+                        file.reset()
+
+                ratelimit = await self.get_bucket(route)
+                if ratelimit:
+                    if wait:
+                        await ratelimit.wait()
+
+                    else:
+                        raise HTTPTooManyRequests("Bucket depleted")
+
+                await self.semaphore.acquire()
+                try:
+                    result = await self._perform_request(route, **kwargs)
+                finally:
+                    self.semaphore.release()
+
+                if converter:
+                    return converter(result)
+
+                return result
+            except HTTPException as e:
+                if e.status == 400:
+                    raise HTTPBadRequest(e.text)
+
+                elif e.status == 401:
+                    raise HTTPUnauthorized(e.text)
+
+                elif e.status == 403:
+                    raise HTTPForbidden(e.text)
+
+                elif e.status == 404:
+                    raise HTTPNotFound(e.text)
+
+                elif e.status == 429 and not wait:
+                    raise HTTPTooManyRequests(e.text)
+
+                elif i == self.max_retries - 1:
+                    raise e
+
+                else:
+                    await asyncio.sleep(i)
