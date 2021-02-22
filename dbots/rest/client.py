@@ -85,6 +85,9 @@ class BucketValues:
         self.remaining = remaining
         self.is_global = is_global
 
+    def __str__(self):
+        return f"{'global' if self.is_global else ''} {self.remaining} {self.delta}"
+
     async def wait(self):
         if self.remaining == 0:
             await asyncio.sleep(self.delta)
@@ -113,6 +116,8 @@ class Route:
 
 
 class RouteMixin:
+    application_id: str
+
     async def request(self, *args, **kwargs):
         # Must be overwritten by the deriving client
         pass
@@ -445,14 +450,20 @@ class RouteMixin:
             json=make_json(options, ("name", "avatar"))
         )
 
-    def execute_webhook(self, webhook, wait=False, **options):
+    def create_webhook_message(self, webhook, wait=False, **options):
         return self.request(
             Route("POST", "/webhooks/{webhook_id}/{webhook_token}",
                   webhook_id=webhook.id, webhook_token=webhook.token),
             json=make_json(options),
-            params={"wait": wait},
+            params={"wait": "true" if wait else "false"},
             converter=Message if wait else None
         )
+
+    def edit_webhook_message(self, webhook, message, **options):
+        pass
+
+    def delete_webhook_message(self, webhook, message):
+        pass
 
     def edit_webhook(self):
         pass
@@ -460,7 +471,7 @@ class RouteMixin:
     def delete_webhook(self):
         pass
 
-    def get_app_info(self):
+    def get_application(self):
         return self.request(
             Route("GET", "/oauth2/applications/@me")
         )
@@ -470,6 +481,117 @@ class RouteMixin:
             Route("GET", "/guilds/templates/{template_id}", template_id=template_id)
         )
 
+    def get_global_commands(self):
+        return self.request(
+            Route("GET", "/applications/{application_id}/commands", application_id=self.application_id)
+        )
+
+    def get_guild_commands(self, guild):
+        return self.request(
+            Route("GET", "/applications/{application_id}/guilds/{guild_id}/commands",
+                  application_id=self.application_id, guild_id=entity_or_id(guild))
+        )
+
+    def get_global_command(self, command):
+        return self.request(
+            Route("GET", "/applications/{application_id}/commands/{command_id}",
+                  application_id=self.application_id, command_id=entity_or_id(command))
+        )
+
+    def get_guild_command(self, guild, command):
+        return self.request(
+            Route("GET", "/applications/{application_id}/guilds/{guild_id}/commands/{command_id}",
+                  application_id=self.application_id, guild_id=entity_or_id(guild),
+                  command_id=entity_or_id(command))
+        )
+
+    def create_global_command(self, data):
+        return self.request(
+            Route("POST", "/applications/{application_id}/commands",
+                  application_id=self.application_id),
+            json=data
+        )
+
+    def create_guild_command(self, guild, data):
+        return self.request(
+            Route("POST", "/applications/{application_id}/guilds/{guild_id}/commands",
+                  application_id=self.application_id, guild_id=entity_or_id(guild)),
+            json=data
+        )
+
+    def edit_global_command(self, command, data):
+        return self.request(
+            Route("PATCH", "/applications/{application_id}/commands/{command_id}",
+                  application_id=self.application_id, command_id=entity_or_id(command)),
+            json=data
+        )
+
+    def edit_guild_command(self, guild, command, data):
+        return self.request(
+            Route("PATCH", "/applications/{application_id}/guilds/{guild_id}/commands/{command_id}",
+                  application_id=self.application_id, guild_id=entity_or_id(guild), command_id=entity_or_id(command)),
+            json=data
+        )
+
+    def delete_global_command(self, command):
+        return self.request(
+            Route("DELETE", "/applications/{application_id}/commands/{command_id}",
+                  application_id=self.application_id, command_id=entity_or_id(command))
+        )
+
+    def delete_guild_command(self, guild, command):
+        return self.request(
+            Route("DELETE", "/applications/{application_id}/guilds/{guild_id}/commands/{command_id}",
+                  application_id=self.application_id, guild_id=entity_or_id(guild), command_id=entity_or_id(command))
+        )
+
+    def replace_global_commands(self, data):
+        return self.request(
+            Route("PUT", "/applications/{application_id}/commands", application_id=self.application_id),
+            json=data
+        )
+
+    def replace_guild_commands(self, guild, data):
+        return self.request(
+            Route("PUT", "/applications/{application_id}/guilds/{guild_id}/commands",
+                  application_id=self.application_id, guild_id=entity_or_id(guild)),
+            json=data
+        )
+
+    def create_interaction_response(self, interaction_token, **options):
+        return self.request(
+            Route("POST", "/webhooks/{application_id}/{webhook_token}",
+                  application_id=self.application_id, webhook_token=interaction_token),
+            json=make_json(options),
+            converter=Message
+        )
+
+    def edit_interaction_response(self, interaction_token, message="@original", **options):
+        return self.request(
+            Route("PATCH", "/webhooks/{application_id}/{webhook_token}/messages/{message_id}",
+                  application_id=self.application_id, webhook_token=interaction_token,
+                  message_id=entity_or_id(message)),
+            json=make_json(options),
+            converter=Message
+        )
+
+    def delete_interaction_response(self, interaction_token, message="@original"):
+        return self.request(
+            Route("DELETE", "/webhooks/{application_id}/{webhook_token}/messages/{message_id}",
+                  application_id=self.application_id, webhook_token=interaction_token,
+                  message_id=entity_or_id(message))
+        )
+
+    def get_interaction_response(self, interaction_token, message="@original"):
+        # We currently have to use PATCH because discord didn't add a GET endpoint yet
+        return self.request(
+            Route("PATCH", "/webhooks/{application_id}/{webhook_token}/messages/{message_id}",
+                  application_id=self.application_id, webhook_token=interaction_token,
+                  message_id=entity_or_id(message)),
+            json={},
+            converter=Message
+        )
+
 
 class HTTPClient(RouteMixin):
     def __init__(self, token, redis, **kwargs):
@@ -477,6 +599,7 @@ class HTTPClient(RouteMixin):
         self._redis = redis
         self._session = kwargs.get("session")
         self.loop = kwargs.get("loop", asyncio.get_event_loop())
+        self.application_id = kwargs.get("application_id")
 
         self.max_retries = kwargs.get("max_retries", 5)
         self.semaphore = None
@@ -528,6 +651,7 @@ class HTTPClient(RouteMixin):
                 raise_for_status=False,
                 **kwargs
         ) as resp:
+            print(resp.status)
             data = await json_or_text(resp)
 
             if 300 > resp.status >= 200:
@@ -574,7 +698,7 @@ class HTTPClient(RouteMixin):
                     for file in files:
                         file.reset()
 
-                ratelimit = await self.get_bucket(route)
+                ratelimit = await self.get_bucket(route.bucket)
                 if ratelimit:
                     if wait:
                         await ratelimit.wait()

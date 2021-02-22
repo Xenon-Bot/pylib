@@ -354,8 +354,8 @@ class Member(User):
         self.roles = data["roles"]
         self.joined_at = parse_time(data["joined_at"])
         self.premium_since = parse_time(data.get("premium_since"))
-        self.deaf = data["deaf"]
-        self.mute = data["mute"]
+        self.deaf = data.get("deaf", False)
+        self.mute = data.get("mute", False)
         self.permissions = Permissions(int(data["permissions"])) if "permissions" in data else None
 
     def to_dict(self):

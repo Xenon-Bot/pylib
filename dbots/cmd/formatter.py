@@ -36,8 +36,7 @@ class Format:
     ERROR = FormatValue(
         title="Error",
         color=0xc64935,
-        emoji="<:error:777557308216967188>",
-        footer="[Support](https://xenon.bot/discord) | [FAQ](http://wiki.xenon.bot/faq)"
+        emoji="<:error:777557308216967188>"
     )
     PLEASE_WAIT = FormatValue(
         title="Please Wait",

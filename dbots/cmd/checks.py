@@ -1,27 +1,41 @@
-import dc_interactions as dc
+import inspect
 from enum import IntEnum
-from xenon import *
-from os import environ as env
+
+from .. import Permissions
 
 from .formatter import *
-from ..rest import HTTPNotFound
-
 
 __all__ = (
+    "Check",
     "has_permissions",
     "bot_has_permissions",
     "is_bot_owner",
     "is_guild_owner",
     "has_permissions_level",
     "PermissionLevels",
-    "not_in_maintenance",
-    "PremiumLevel",
-    "is_premium"
+    "not_in_maintenance"
 )
 
 
+class Check:
+    def __init__(self, callable, next=None):
+        self.callable = callable
+        self.next = next
+
+    def __call__(self, next):
+        self.next = next
+        return self
+
+    async def run(self, ctx, **kwargs):
+        result = self.callable(ctx, **kwargs)
+        if inspect.isawaitable(result):
+            result = await result
+
+        return result
+
+
 def has_permissions(*args, **kwargs):
-    @dc.Check
+    @Check
     async def _check(ctx, **_):
         required = list(args) + list(kwargs.keys())
         perms = ctx.author.permissions
@@ -48,7 +62,7 @@ def has_permissions(*args, **kwargs):
 
 
 def bot_has_permissions(*args, **kwargs):
-    @dc.Check
+    @Check
     async def _check(ctx, **_):
         required = list(args) + list(kwargs.keys())
         bot_member = await ctx.fetch_bot_member()
@@ -84,7 +98,7 @@ def bot_has_permissions(*args, **kwargs):
     return _check
 
 
-@dc.Check
+@Check
 async def is_guild_owner(ctx, *args, **kwargs):
     guild = await ctx.fetch_guild()
     if ctx.author.id != guild.owner_id:
@@ -132,12 +146,12 @@ def has_permissions_level(destructive=False):
             else:
                 return await has_permissions("administrator")(callback).run(ctx, **kwargs)
 
-        return dc.Check(_check, callback)
+        return Check(_check, callback)
 
     return predicate
 
 
-@dc.Check
+@Check
 async def is_bot_owner(ctx, **_):
     app = await ctx.bot.http.get_app_info()
     if ctx.author.id != app["owner"]["id"]:
@@ -184,7 +198,7 @@ def cooldown(rate: int, per: int, bucket=CooldownType.AUTHOR, manual=False):
 
         return "cmd:cooldown:" + ctx.command.full_name.replace(" ", "") + ":" + key
 
-    @dc.Check
+    @Check
     async def _check(ctx, **_):
         key = get_key(ctx)
         current = int(await ctx.bot.redis.get(key) or 0)
@@ -217,7 +231,7 @@ def cooldown(rate: int, per: int, bucket=CooldownType.AUTHOR, manual=False):
     return _check
 
 
-@dc.Check
+@Check
 async def not_in_maintenance(ctx, **_):
     in_maintenance = await ctx.bot.redis.exists("cmd:maintenance")
     if in_maintenance:
@@ -229,56 +243,3 @@ async def not_in_maintenance(ctx, **_):
         return
 
     return True
-
-
-SUPPORT_GUILD = env.get("SUPPORT_GUILD")
-
-
-class PremiumLevel(IntEnum):
-    NONE = 0
-    ONE = 1
-    TWO = 2
-    THREE = 3
-
-
-def is_premium(level=PremiumLevel.ONE):
-    @dc.Check
-    async def _check(ctx, **_):
-        try:
-            member = await ctx.bot.http.get_guild_members(SUPPORT_GUILD, ctx.author.id)
-        except HTTPNotFound:
-            await ctx.respond(**create_message(
-                f"This command **can only be used by users with the premium level `{level.name}` or higher**.\n"
-                f"Your current premium level is `{PremiumLevel.NONE.name}`. "
-                f"[Upgrade Here](https://www.patreon.com/merlinfuchs)",
-                embed=False,
-                f=Format.ERROR
-            ), ephemeral=True)
-
-        guild = await ctx.bot.http.get_guild(SUPPORT_GUILD)
-
-        current = 0
-        prefix = "Premium "
-        for role in filter(lambda r: r in member.roles, guild.roles):
-            if role.name.startswith(prefix):
-                try:
-                    value = int(role.name.strip(prefix))
-                except ValueError:
-                    continue
-
-                if value > current:
-                    current = value
-
-        current_level = PremiumLevel(current)
-        ctx.premium = current_level
-
-        if current < level.value:
-            await ctx.respond(**create_message(
-                f"This command **can only be used by users with the premium level `{level.name}` or higher**.\n"
-                f"Your current premium level is `{current_level.name}`. "
-                f"[Upgrade Here](https://www.patreon.com/merlinfuchs)",
-                embed=False,
-                f=Format.ERROR
-            ), ephemeral=True)
-
-    return _check
