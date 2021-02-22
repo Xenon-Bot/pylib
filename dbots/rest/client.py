@@ -651,7 +651,6 @@ class HTTPClient(RouteMixin):
                 raise_for_status=False,
                 **kwargs
         ) as resp:
-            print(resp.status)
             data = await json_or_text(resp)
 
             if 300 > resp.status >= 200:
