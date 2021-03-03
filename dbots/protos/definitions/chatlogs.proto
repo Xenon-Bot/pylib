@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package chatlogs;
+
+message CreateRequest {
+  string channel_id = 1;
+}
+
+message CreateReply {}
+
+message LoadRequest {
+  string channel_id = 1;
+}
+
+message LoadReply {}
+
+service Chatlogs {
+  rpc Create(CreateRequest) returns (stream CreateReply) {}
+  rpc Load(LoadRequest) returns (stream LoadReply) {}
+}

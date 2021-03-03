@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package backups;
+
+message CreateRequest {
+  string guild_id = 1;
+  repeated string options = 2;
+  uint32 chatlog = 3;
+}
+
+message CreateReply {
+  string status = 1;
+}
+
+message LoadRequest {
+  string backup_id = 1;
+  string user_id = 2;
+  string guild_id = 3;
+  string decryption_key = 4;
+  repeated string options = 5;
+  uint32 chatlog = 6;
+}
+
+message LoadReply {
+  string status = 1;
+}
+
+message LoadStatusRequest {
+  string guild_id = 1;
+}
+
+message LoadStatusReply {
+  string status = 1;
+}
+
+message CancelLoadRequest {
+  string guild_id = 1;
+}
+
+message CancelLoadReply {}
+
+service Backups {
+  rpc Create(CreateRequest) returns (stream CreateReply) {}
+  rpc Load(LoadRequest) returns (stream LoadReply) {}
+  rpc LoadStatus(LoadStatusRequest) returns (LoadStatusReply) {}
+  rpc CancelLoad(CancelLoadRequest) returns (CancelLoadReply) {}
+}
