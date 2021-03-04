@@ -21,6 +21,10 @@ class RPCClient:
         self._listeners = {}
         self._waiting = weakref.WeakValueDictionary()
 
+    @property
+    def redis(self):
+        return self._redis
+
     def get_call_key(self, name):
         return f"rpc:call:{self.bucket}:{name}"
 
@@ -44,17 +48,19 @@ class RPCClient:
             await asyncio.gather([_exectutor(l) for l in listeners], return_exceptions=True)
 
         else:
-            await _exectutor(listeners[0])
+            for listener in listeners:
+                await _exectutor(listener)
+                break
 
     async def run_reader(self, *events):
-        await self._redis.subscribe(*[
-            self._mpsc.pattern(self.get_call_key(e))
-            for e in events
-        ], self._mpsc.pattern(self.get_response_key("*")))
+        await self._redis.psubscribe(
+            self._mpsc.pattern(self.get_call_key("*")),
+            self._mpsc.pattern(self.get_response_key("*"))
+        )
 
         async for _, msg in self._mpsc.iter():
             try:
-                payload = json.loads(msg)
+                payload = json.loads(msg[1])
                 if "response" in payload:
                     if payload["id"] in self._waiting:
                         fut = self._waiting[payload["id"]]
@@ -66,10 +72,12 @@ class RPCClient:
                 all = True
                 if "compete" in payload:
                     all = False
-                    payload = await self._redis.get(payload["compete"])
-                    if payload is None:
+                    raw = await self._redis.get(payload["compete"])
+                    if raw is None:
                         # Someone else has already processed this
                         continue
+
+                    payload = json.loads(raw)
 
                 self.loop.create_task(self._execute(payload, all=all))
             except:
@@ -94,7 +102,7 @@ class RPCClient:
     async def _wait_for_response(self, call_id, timeout=5.0):
         future = asyncio.Future()
         self._waiting[call_id] = future
-        return asyncio.wait_for(future, timeout=timeout)
+        return await asyncio.wait_for(future, timeout=timeout)
 
     async def call(self, name, timeout=5.0, *args, **kwargs):
         call_id = uuid.uuid4().hex
@@ -132,3 +140,7 @@ class RPCClient:
 
         else:
             self._listeners[name].add(callable)
+
+    def provide_service(self, service):
+        for tp in service.to_provide:
+            self.provide(tp.name, tp.callable)
