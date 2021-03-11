@@ -151,7 +151,7 @@ class InteractionBot:
 
         tb = "".join(traceback.format_exception(type(e), e, e.__traceback__))
         print("Command Error:\n", tb, file=sys.stderr)
-        await ctx.acknowledge()
+        await ctx.defer()
 
     async def execute_command(self, command, payload, remaining_options):
         ctx = self.ctx_klass(self, command, payload)
@@ -171,22 +171,18 @@ class InteractionBot:
 
                 result = command.callable(ctx, **values)
                 if inspect.isawaitable(result):
-                    result = await result
-
-                if result is not None:
-                    await ctx.respond_with(result)
-
+                    await result
             except Exception as e:
                 await self.on_command_error(ctx, e)
 
         self.loop.create_task(_executor())
-
         try:
-            return await asyncio.wait_for(ctx.future, timeout=5)
+            return await asyncio.wait_for(ctx.future, timeout=2)
         except asyncio.TimeoutError:
             if not ctx.future.done():
                 ctx.future.set_result(None)
-            return InteractionResponse.acknowledge()
+
+            return InteractionResponse.defer()
         except Exception as e:
             return await self.on_command_error(ctx, e)
 
@@ -197,7 +193,7 @@ class InteractionBot:
         elif payload.type == InteractionType.APPLICATION_COMMAND:
             command, remaining_options = self.find_command(payload.data)
             if command is None:
-                return InteractionResponse.acknowledge()
+                return None
 
             return await self.execute_command(command, payload, remaining_options)
 
@@ -215,6 +211,9 @@ class InteractionBot:
 
         data = InteractionPayload(json.loads(raw_data))
         resp = await self.interaction_received(data)
+        if resp is None:
+            return web.json_response({}, status=400)
+
         return web.json_response(resp.to_dict())
 
     async def sanic_entry(self, request):
@@ -233,6 +232,9 @@ class InteractionBot:
 
         data = InteractionPayload(json.loads(raw_data))
         resp = await self.interaction_received(data)
+        if resp is None:
+            return response.json({}, status=400)
+
         return response.json(resp.to_dict())
 
     async def setup(self, redis_url="redis://localhost"):

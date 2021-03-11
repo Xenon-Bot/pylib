@@ -413,8 +413,8 @@ class MessageAttachment(Entity):
         self.size = data["size"]
         self.url = data["url"]
         self.proxy_url = data["proxy_url"]
-        self.height = data["height"]
-        self.width = data["width"]
+        self.height = data.get("height")
+        self.width = data.get("width")
 
     def to_dict(self):
         return {

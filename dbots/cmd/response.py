@@ -9,10 +9,8 @@ __all__ = (
 
 class InteractionResponseType(IntEnum):
     PONG = 1
-    ACKNOWLEDGE = 2
-    CHANNEL_MESSAGE = 3
-    CHANNEL_MESSAGE_WITH_SOURCE = 4
-    ACKNOWLEDGE_WITH_SOURCE = 5
+    CHANNEL_MESSAGE = 4
+    DEFERRED = 5
 
 
 class InteractionResponse:
@@ -29,31 +27,15 @@ class InteractionResponse:
         return cls(InteractionResponseType.PONG)
 
     @classmethod
-    def acknowledge(cls):
-        return cls(InteractionResponseType.ACKNOWLEDGE)
-
-    @classmethod
-    def ack(cls):
-        return cls(InteractionResponseType.ACKNOWLEDGE)
+    def defer(cls):
+        return cls(InteractionResponseType.DEFERRED)
 
     @classmethod
     def message(cls, content=None, **kwargs):
         return cls(InteractionResponseType.CHANNEL_MESSAGE, content=content, **kwargs)
 
-    @classmethod
-    def message_with_source(cls, content=None, **kwargs):
-        return cls(InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE, content=content, **kwargs)
-
-    @classmethod
-    def acknowledge_with_source(cls):
-        return cls(InteractionResponseType.ACKNOWLEDGE_WITH_SOURCE)
-
-    @classmethod
-    def ack_with_source(cls):
-        return cls(InteractionResponseType.ACKNOWLEDGE_WITH_SOURCE)
-
     def to_dict(self):
-        if self.type in {InteractionResponseType.ACKNOWLEDGE, InteractionResponseType.ACKNOWLEDGE_WITH_SOURCE}:
+        if self.type == InteractionResponseType.DEFERRED:
             return {"type": self.type.value}
 
         return {

@@ -283,11 +283,8 @@ class CommandContext:
 
     async def respond_with(self, response):
         if self.future.done():
-            if response.type in {
-                InteractionResponseType.ACKNOWLEDGE_WITH_SOURCE,
-                InteractionResponseType.ACKNOWLEDGE
-            }:
-                return  # We can't ack via webhooks; response was most likely already acked anyways
+            if response.type == InteractionResponseType.DEFERRED:
+                return  # We can't defer via webhooks; response was most likely already deffered
 
             return await self.bot.http.create_interaction_response(
                 self.token,
@@ -301,20 +298,8 @@ class CommandContext:
     def respond(self, *args, **kwargs):
         return self.respond_with(InteractionResponse.message(*args, **kwargs))
 
-    def respond_with_source(self, *args, **kwargs):
-        return self.respond_with(InteractionResponse.message_with_source(*args, **kwargs))
-
-    def acknowledge(self):
-        return self.respond_with(InteractionResponse.acknowledge())
-
-    def ack(self):
-        return self.acknowledge()
-
-    def acknowledge_with_source(self):
-        return self.respond_with(InteractionResponse.acknowledge_with_source())
-
-    def ack_with_source(self):
-        return self.acknowledge_with_source()
+    def defer(self):
+        return self.respond_with(InteractionResponse.defer())
 
     async def get_response(self, message_id="@original"):
         return await self.bot.http.get_interaction_response(self.token, message_id)
@@ -366,7 +351,7 @@ class CommandContext:
         if "member" in self._http_cache:
             return self._http_cache["member"]
 
-        member = await self.bot.http.get_guild_member(self.guild_id, self.bot.app_id)
+        member = await self.bot.http.get_guild_member(self.guild_id, self.bot.http.application_id)
         self._http_cache["member"] = member
         return member
 
