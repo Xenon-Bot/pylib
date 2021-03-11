@@ -9,6 +9,7 @@ import grpclib.client
 if typing.TYPE_CHECKING:
     import grpclib.server
 
+from . import chatlogs_pb2
 from . import backups_pb2
 
 

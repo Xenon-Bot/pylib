@@ -11,6 +11,7 @@ from google.protobuf import symbol_database as _symbol_database
 _sym_db = _symbol_database.Default()
 
 
+from . import chatlogs_pb2 as chatlogs__pb2
 
 
 DESCRIPTOR = _descriptor.FileDescriptor(
@@ -19,10 +20,485 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\rbackups.proto\x12\x07\x62\x61\x63kups\"C\n\rCreateRequest\x12\x10\n\x08guild_id\x18\x01 \x01(\t\x12\x0f\n\x07options\x18\x02 \x03(\t\x12\x0f\n\x07\x63hatlog\x18\x03 \x01(\r\"\x1d\n\x0b\x43reateReply\x12\x0e\n\x06status\x18\x01 \x01(\t\"}\n\x0bLoadRequest\x12\x11\n\tbackup_id\x18\x01 \x01(\t\x12\x0f\n\x07user_id\x18\x02 \x01(\t\x12\x10\n\x08guild_id\x18\x03 \x01(\t\x12\x16\n\x0e\x64\x65\x63ryption_key\x18\x04 \x01(\t\x12\x0f\n\x07options\x18\x05 \x03(\t\x12\x0f\n\x07\x63hatlog\x18\x06 \x01(\r\"\x1b\n\tLoadReply\x12\x0e\n\x06status\x18\x01 \x01(\t\"%\n\x11LoadStatusRequest\x12\x10\n\x08guild_id\x18\x01 \x01(\t\"!\n\x0fLoadStatusReply\x12\x0e\n\x06status\x18\x01 \x01(\t\"%\n\x11\x43\x61ncelLoadRequest\x12\x10\n\x08guild_id\x18\x01 \x01(\t\"\x11\n\x0f\x43\x61ncelLoadReply2\x87\x02\n\x07\x42\x61\x63kups\x12:\n\x06\x43reate\x12\x16.backups.CreateRequest\x1a\x14.backups.CreateReply\"\x00\x30\x01\x12\x34\n\x04Load\x12\x14.backups.LoadRequest\x1a\x12.backups.LoadReply\"\x00\x30\x01\x12\x44\n\nLoadStatus\x12\x1a.backups.LoadStatusRequest\x1a\x18.backups.LoadStatusReply\"\x00\x12\x44\n\nCancelLoad\x12\x1a.backups.CancelLoadRequest\x1a\x18.backups.CancelLoadReply\"\x00\x62\x06proto3'
+  serialized_pb=b'\n\rbackups.proto\x12\x07\x62\x61\x63kups\x1a\x0e\x63hatlogs.proto\"\xbc\x08\n\nBackupData\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x0c\n\x04icon\x18\x03 \x01(\t\x12\x0e\n\x06region\x18\x04 \x01(\t\x12\x16\n\x0e\x61\x66k_channel_id\x18\x05 \x01(\t\x12\x13\n\x0b\x61\x66k_timeout\x18\x06 \x01(\r\x12\x1a\n\x12verification_level\x18\x07 \x01(\r\x12\x1d\n\x15\x64\x65\x66\x61ult_verifications\x18\x08 \x01(\r\x12\x1f\n\x17\x65xplicit_content_filter\x18\t \x01(\r\x12\'\n\x05roles\x18\n \x03(\x0b\x32\x18.backups.BackupData.Role\x12-\n\x08\x63hannels\x18\x0b \x03(\x0b\x32\x1b.backups.BackupData.Channel\x12%\n\x04\x62\x61ns\x18\x0c \x03(\x0b\x32\x17.backups.BackupData.Ban\x12+\n\x07members\x18\r \x03(\x0b\x32\x1a.backups.BackupData.Member\x12\x18\n\x10rules_channel_id\x18\x0e \x01(\t\x12!\n\x19public_updates_channel_id\x18\x0f \x01(\t\x12\x18\n\x10preferred_locale\x18\x10 \x01(\t\x12\x0e\n\x06splash\x18\x11 \x01(\t\x12\x0e\n\x06\x62\x61nner\x18\x12 \x01(\t\x1a\x8b\x01\n\x04Role\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x13\n\x0bpermissions\x18\x03 \x01(\t\x12\x10\n\x08position\x18\x04 \x01(\r\x12\r\n\x05hoist\x18\x05 \x01(\x08\x12\x0f\n\x07managed\x18\x06 \x01(\x08\x12\x13\n\x0bmentionable\x18\x07 \x01(\x08\x12\r\n\x05\x63olor\x18\x08 \x01(\r\x1a\xe5\x02\n\x07\x43hannel\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04type\x18\x02 \x01(\r\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x10\n\x08position\x18\x04 \x01(\r\x12\x39\n\noverwrites\x18\x05 \x03(\x0b\x32%.backups.BackupData.Channel.Overwrite\x12\x11\n\tparent_id\x18\x06 \x01(\t\x12\r\n\x05topic\x18\x07 \x01(\t\x12\x0c\n\x04nsfw\x18\x08 \x01(\x08\x12\x1b\n\x13rate_limit_per_user\x18\t \x01(\r\x12/\n\x08messages\x18\n \x03(\x0b\x32\x1d.chatlogs.ChatlogData.Message\x12\x0f\n\x07\x62itrate\x18\x0b \x01(\r\x12\x12\n\nuser_limit\x18\x0c \x01(\r\x1a\x42\n\tOverwrite\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04type\x18\x02 \x01(\r\x12\r\n\x05\x61llow\x18\x03 \x01(\t\x12\x0c\n\x04\x64\x65ny\x18\x04 \x01(\t\x1a!\n\x03\x42\x61n\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0e\n\x06reason\x18\x02 \x01(\t\x1a\x31\n\x06Member\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04nick\x18\x02 \x01(\t\x12\r\n\x05roles\x18\x03 \x03(\t\"I\n\rCreateRequest\x12\x10\n\x08guild_id\x18\x01 \x01(\t\x12\x0f\n\x07options\x18\x02 \x03(\t\x12\x15\n\rmessage_count\x18\x03 \x01(\r\"]\n\x0b\x43reateReply\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x1b\n\x13\x65stimated_time_left\x18\x02 \x01(\r\x12!\n\x04\x64\x61ta\x18\x03 \x01(\x0b\x32\x13.backups.BackupData\"\xe4\x01\n\x0bLoadRequest\x12\x10\n\x08guild_id\x18\x01 \x01(\t\x12!\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\x13.backups.BackupData\x12*\n\x03ids\x18\x03 \x03(\x0b\x32\x1d.backups.LoadRequest.IdsEntry\x12\x0e\n\x06reason\x18\x04 \x01(\t\x12\x0f\n\x07options\x18\x05 \x03(\t\x12\x15\n\rmessage_count\x18\x06 \x01(\r\x12\x10\n\x08keep_ids\x18\x07 \x03(\t\x1a*\n\x08IdsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x8e\x01\n\tLoadReply\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x1b\n\x13\x65stimated_time_left\x18\x02 \x01(\r\x12(\n\x03ids\x18\x03 \x03(\x0b\x32\x1b.backups.LoadReply.IdsEntry\x1a*\n\x08IdsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"%\n\x11LoadStatusRequest\x12\x10\n\x08guild_id\x18\x01 \x01(\t\">\n\x0fLoadStatusReply\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x1b\n\x13\x65stimated_time_left\x18\x02 \x01(\r\"%\n\x11\x43\x61ncelLoadRequest\x12\x10\n\x08guild_id\x18\x01 \x01(\t\"$\n\x0f\x43\x61ncelLoadReply\x12\x11\n\tcancelled\x18\x01 \x01(\x08\x32\x87\x02\n\x07\x42\x61\x63kups\x12:\n\x06\x43reate\x12\x16.backups.CreateRequest\x1a\x14.backups.CreateReply\"\x00\x30\x01\x12\x34\n\x04Load\x12\x14.backups.LoadRequest\x1a\x12.backups.LoadReply\"\x00\x30\x01\x12\x44\n\nLoadStatus\x12\x1a.backups.LoadStatusRequest\x1a\x18.backups.LoadStatusReply\"\x00\x12\x44\n\nCancelLoad\x12\x1a.backups.CancelLoadRequest\x1a\x18.backups.CancelLoadReply\"\x00\x62\x06proto3'
+  ,
+  dependencies=[chatlogs__pb2.DESCRIPTOR,])
+
+
+
+
+_BACKUPDATA_ROLE = _descriptor.Descriptor(
+  name='Role',
+  full_name='backups.BackupData.Role',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='id', full_name='backups.BackupData.Role.id', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='name', full_name='backups.BackupData.Role.name', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='permissions', full_name='backups.BackupData.Role.permissions', index=2,
+      number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='position', full_name='backups.BackupData.Role.position', index=3,
+      number=4, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='hoist', full_name='backups.BackupData.Role.hoist', index=4,
+      number=5, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='managed', full_name='backups.BackupData.Role.managed', index=5,
+      number=6, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='mentionable', full_name='backups.BackupData.Role.mentionable', index=6,
+      number=7, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='color', full_name='backups.BackupData.Role.color', index=7,
+      number=8, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=542,
+  serialized_end=681,
 )
 
+_BACKUPDATA_CHANNEL_OVERWRITE = _descriptor.Descriptor(
+  name='Overwrite',
+  full_name='backups.BackupData.Channel.Overwrite',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='id', full_name='backups.BackupData.Channel.Overwrite.id', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='type', full_name='backups.BackupData.Channel.Overwrite.type', index=1,
+      number=2, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='allow', full_name='backups.BackupData.Channel.Overwrite.allow', index=2,
+      number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='deny', full_name='backups.BackupData.Channel.Overwrite.deny', index=3,
+      number=4, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=975,
+  serialized_end=1041,
+)
 
+_BACKUPDATA_CHANNEL = _descriptor.Descriptor(
+  name='Channel',
+  full_name='backups.BackupData.Channel',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='id', full_name='backups.BackupData.Channel.id', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='type', full_name='backups.BackupData.Channel.type', index=1,
+      number=2, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='name', full_name='backups.BackupData.Channel.name', index=2,
+      number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='position', full_name='backups.BackupData.Channel.position', index=3,
+      number=4, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='overwrites', full_name='backups.BackupData.Channel.overwrites', index=4,
+      number=5, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='parent_id', full_name='backups.BackupData.Channel.parent_id', index=5,
+      number=6, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='topic', full_name='backups.BackupData.Channel.topic', index=6,
+      number=7, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='nsfw', full_name='backups.BackupData.Channel.nsfw', index=7,
+      number=8, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='rate_limit_per_user', full_name='backups.BackupData.Channel.rate_limit_per_user', index=8,
+      number=9, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='messages', full_name='backups.BackupData.Channel.messages', index=9,
+      number=10, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='bitrate', full_name='backups.BackupData.Channel.bitrate', index=10,
+      number=11, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='user_limit', full_name='backups.BackupData.Channel.user_limit', index=11,
+      number=12, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[_BACKUPDATA_CHANNEL_OVERWRITE, ],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=684,
+  serialized_end=1041,
+)
+
+_BACKUPDATA_BAN = _descriptor.Descriptor(
+  name='Ban',
+  full_name='backups.BackupData.Ban',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='id', full_name='backups.BackupData.Ban.id', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='reason', full_name='backups.BackupData.Ban.reason', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1043,
+  serialized_end=1076,
+)
+
+_BACKUPDATA_MEMBER = _descriptor.Descriptor(
+  name='Member',
+  full_name='backups.BackupData.Member',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='id', full_name='backups.BackupData.Member.id', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='nick', full_name='backups.BackupData.Member.nick', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='roles', full_name='backups.BackupData.Member.roles', index=2,
+      number=3, type=9, cpp_type=9, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1078,
+  serialized_end=1127,
+)
+
+_BACKUPDATA = _descriptor.Descriptor(
+  name='BackupData',
+  full_name='backups.BackupData',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='id', full_name='backups.BackupData.id', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='name', full_name='backups.BackupData.name', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='icon', full_name='backups.BackupData.icon', index=2,
+      number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='region', full_name='backups.BackupData.region', index=3,
+      number=4, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='afk_channel_id', full_name='backups.BackupData.afk_channel_id', index=4,
+      number=5, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='afk_timeout', full_name='backups.BackupData.afk_timeout', index=5,
+      number=6, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='verification_level', full_name='backups.BackupData.verification_level', index=6,
+      number=7, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='default_verifications', full_name='backups.BackupData.default_verifications', index=7,
+      number=8, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='explicit_content_filter', full_name='backups.BackupData.explicit_content_filter', index=8,
+      number=9, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='roles', full_name='backups.BackupData.roles', index=9,
+      number=10, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='channels', full_name='backups.BackupData.channels', index=10,
+      number=11, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='bans', full_name='backups.BackupData.bans', index=11,
+      number=12, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='members', full_name='backups.BackupData.members', index=12,
+      number=13, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='rules_channel_id', full_name='backups.BackupData.rules_channel_id', index=13,
+      number=14, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='public_updates_channel_id', full_name='backups.BackupData.public_updates_channel_id', index=14,
+      number=15, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='preferred_locale', full_name='backups.BackupData.preferred_locale', index=15,
+      number=16, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='splash', full_name='backups.BackupData.splash', index=16,
+      number=17, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='banner', full_name='backups.BackupData.banner', index=17,
+      number=18, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[_BACKUPDATA_ROLE, _BACKUPDATA_CHANNEL, _BACKUPDATA_BAN, _BACKUPDATA_MEMBER, ],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=43,
+  serialized_end=1127,
+)
 
 
 _CREATEREQUEST = _descriptor.Descriptor(
@@ -48,7 +524,7 @@ _CREATEREQUEST = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='chatlog', full_name='backups.CreateRequest.chatlog', index=2,
+      name='message_count', full_name='backups.CreateRequest.message_count', index=2,
       number=3, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -66,8 +542,8 @@ _CREATEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=26,
-  serialized_end=93,
+  serialized_start=1129,
+  serialized_end=1202,
 )
 
 
@@ -86,6 +562,20 @@ _CREATEREPLY = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='estimated_time_left', full_name='backups.CreateReply.estimated_time_left', index=1,
+      number=2, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='data', full_name='backups.CreateReply.data', index=2,
+      number=3, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -98,10 +588,48 @@ _CREATEREPLY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=95,
-  serialized_end=124,
+  serialized_start=1204,
+  serialized_end=1297,
 )
 
+
+_LOADREQUEST_IDSENTRY = _descriptor.Descriptor(
+  name='IdsEntry',
+  full_name='backups.LoadRequest.IdsEntry',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='key', full_name='backups.LoadRequest.IdsEntry.key', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='value', full_name='backups.LoadRequest.IdsEntry.value', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=b'8\001',
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1486,
+  serialized_end=1528,
+)
 
 _LOADREQUEST = _descriptor.Descriptor(
   name='LoadRequest',
@@ -112,28 +640,28 @@ _LOADREQUEST = _descriptor.Descriptor(
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='backup_id', full_name='backups.LoadRequest.backup_id', index=0,
+      name='guild_id', full_name='backups.LoadRequest.guild_id', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='user_id', full_name='backups.LoadRequest.user_id', index=1,
-      number=2, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
+      name='data', full_name='backups.LoadRequest.data', index=1,
+      number=2, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='guild_id', full_name='backups.LoadRequest.guild_id', index=2,
-      number=3, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
+      name='ids', full_name='backups.LoadRequest.ids', index=2,
+      number=3, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='decryption_key', full_name='backups.LoadRequest.decryption_key', index=3,
+      name='reason', full_name='backups.LoadRequest.reason', index=3,
       number=4, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -147,9 +675,55 @@ _LOADREQUEST = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='chatlog', full_name='backups.LoadRequest.chatlog', index=5,
+      name='message_count', full_name='backups.LoadRequest.message_count', index=5,
       number=6, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='keep_ids', full_name='backups.LoadRequest.keep_ids', index=6,
+      number=7, type=9, cpp_type=9, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[_LOADREQUEST_IDSENTRY, ],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1300,
+  serialized_end=1528,
+)
+
+
+_LOADREPLY_IDSENTRY = _descriptor.Descriptor(
+  name='IdsEntry',
+  full_name='backups.LoadReply.IdsEntry',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='key', full_name='backups.LoadReply.IdsEntry.key', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='value', full_name='backups.LoadReply.IdsEntry.value', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
@@ -159,16 +733,15 @@ _LOADREQUEST = _descriptor.Descriptor(
   nested_types=[],
   enum_types=[
   ],
-  serialized_options=None,
+  serialized_options=b'8\001',
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=126,
-  serialized_end=251,
+  serialized_start=1486,
+  serialized_end=1528,
 )
-
 
 _LOADREPLY = _descriptor.Descriptor(
   name='LoadReply',
@@ -185,10 +758,24 @@ _LOADREPLY = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='estimated_time_left', full_name='backups.LoadReply.estimated_time_left', index=1,
+      number=2, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='ids', full_name='backups.LoadReply.ids', index=2,
+      number=3, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
-  nested_types=[],
+  nested_types=[_LOADREPLY_IDSENTRY, ],
   enum_types=[
   ],
   serialized_options=None,
@@ -197,8 +784,8 @@ _LOADREPLY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=253,
-  serialized_end=280,
+  serialized_start=1531,
+  serialized_end=1673,
 )
 
 
@@ -229,8 +816,8 @@ _LOADSTATUSREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=282,
-  serialized_end=319,
+  serialized_start=1675,
+  serialized_end=1712,
 )
 
 
@@ -249,6 +836,13 @@ _LOADSTATUSREPLY = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='estimated_time_left', full_name='backups.LoadStatusReply.estimated_time_left', index=1,
+      number=2, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -261,8 +855,8 @@ _LOADSTATUSREPLY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=321,
-  serialized_end=354,
+  serialized_start=1714,
+  serialized_end=1776,
 )
 
 
@@ -293,8 +887,8 @@ _CANCELLOADREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=356,
-  serialized_end=393,
+  serialized_start=1778,
+  serialized_end=1815,
 )
 
 
@@ -306,6 +900,13 @@ _CANCELLOADREPLY = _descriptor.Descriptor(
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
+    _descriptor.FieldDescriptor(
+      name='cancelled', full_name='backups.CancelLoadReply.cancelled', index=0,
+      number=1, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -318,10 +919,28 @@ _CANCELLOADREPLY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=395,
-  serialized_end=412,
+  serialized_start=1817,
+  serialized_end=1853,
 )
 
+_BACKUPDATA_ROLE.containing_type = _BACKUPDATA
+_BACKUPDATA_CHANNEL_OVERWRITE.containing_type = _BACKUPDATA_CHANNEL
+_BACKUPDATA_CHANNEL.fields_by_name['overwrites'].message_type = _BACKUPDATA_CHANNEL_OVERWRITE
+_BACKUPDATA_CHANNEL.fields_by_name['messages'].message_type = chatlogs__pb2._CHATLOGDATA_MESSAGE
+_BACKUPDATA_CHANNEL.containing_type = _BACKUPDATA
+_BACKUPDATA_BAN.containing_type = _BACKUPDATA
+_BACKUPDATA_MEMBER.containing_type = _BACKUPDATA
+_BACKUPDATA.fields_by_name['roles'].message_type = _BACKUPDATA_ROLE
+_BACKUPDATA.fields_by_name['channels'].message_type = _BACKUPDATA_CHANNEL
+_BACKUPDATA.fields_by_name['bans'].message_type = _BACKUPDATA_BAN
+_BACKUPDATA.fields_by_name['members'].message_type = _BACKUPDATA_MEMBER
+_CREATEREPLY.fields_by_name['data'].message_type = _BACKUPDATA
+_LOADREQUEST_IDSENTRY.containing_type = _LOADREQUEST
+_LOADREQUEST.fields_by_name['data'].message_type = _BACKUPDATA
+_LOADREQUEST.fields_by_name['ids'].message_type = _LOADREQUEST_IDSENTRY
+_LOADREPLY_IDSENTRY.containing_type = _LOADREPLY
+_LOADREPLY.fields_by_name['ids'].message_type = _LOADREPLY_IDSENTRY
+DESCRIPTOR.message_types_by_name['BackupData'] = _BACKUPDATA
 DESCRIPTOR.message_types_by_name['CreateRequest'] = _CREATEREQUEST
 DESCRIPTOR.message_types_by_name['CreateReply'] = _CREATEREPLY
 DESCRIPTOR.message_types_by_name['LoadRequest'] = _LOADREQUEST
@@ -331,6 +950,53 @@ DESCRIPTOR.message_types_by_name['LoadStatusReply'] = _LOADSTATUSREPLY
 DESCRIPTOR.message_types_by_name['CancelLoadRequest'] = _CANCELLOADREQUEST
 DESCRIPTOR.message_types_by_name['CancelLoadReply'] = _CANCELLOADREPLY
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
+
+BackupData = _reflection.GeneratedProtocolMessageType('BackupData', (_message.Message,), {
+
+  'Role' : _reflection.GeneratedProtocolMessageType('Role', (_message.Message,), {
+    'DESCRIPTOR' : _BACKUPDATA_ROLE,
+    '__module__' : 'backups_pb2'
+    # @@protoc_insertion_point(class_scope:backups.BackupData.Role)
+    })
+  ,
+
+  'Channel' : _reflection.GeneratedProtocolMessageType('Channel', (_message.Message,), {
+
+    'Overwrite' : _reflection.GeneratedProtocolMessageType('Overwrite', (_message.Message,), {
+      'DESCRIPTOR' : _BACKUPDATA_CHANNEL_OVERWRITE,
+      '__module__' : 'backups_pb2'
+      # @@protoc_insertion_point(class_scope:backups.BackupData.Channel.Overwrite)
+      })
+    ,
+    'DESCRIPTOR' : _BACKUPDATA_CHANNEL,
+    '__module__' : 'backups_pb2'
+    # @@protoc_insertion_point(class_scope:backups.BackupData.Channel)
+    })
+  ,
+
+  'Ban' : _reflection.GeneratedProtocolMessageType('Ban', (_message.Message,), {
+    'DESCRIPTOR' : _BACKUPDATA_BAN,
+    '__module__' : 'backups_pb2'
+    # @@protoc_insertion_point(class_scope:backups.BackupData.Ban)
+    })
+  ,
+
+  'Member' : _reflection.GeneratedProtocolMessageType('Member', (_message.Message,), {
+    'DESCRIPTOR' : _BACKUPDATA_MEMBER,
+    '__module__' : 'backups_pb2'
+    # @@protoc_insertion_point(class_scope:backups.BackupData.Member)
+    })
+  ,
+  'DESCRIPTOR' : _BACKUPDATA,
+  '__module__' : 'backups_pb2'
+  # @@protoc_insertion_point(class_scope:backups.BackupData)
+  })
+_sym_db.RegisterMessage(BackupData)
+_sym_db.RegisterMessage(BackupData.Role)
+_sym_db.RegisterMessage(BackupData.Channel)
+_sym_db.RegisterMessage(BackupData.Channel.Overwrite)
+_sym_db.RegisterMessage(BackupData.Ban)
+_sym_db.RegisterMessage(BackupData.Member)
 
 CreateRequest = _reflection.GeneratedProtocolMessageType('CreateRequest', (_message.Message,), {
   'DESCRIPTOR' : _CREATEREQUEST,
@@ -347,18 +1013,34 @@ CreateReply = _reflection.GeneratedProtocolMessageType('CreateReply', (_message.
 _sym_db.RegisterMessage(CreateReply)
 
 LoadRequest = _reflection.GeneratedProtocolMessageType('LoadRequest', (_message.Message,), {
+
+  'IdsEntry' : _reflection.GeneratedProtocolMessageType('IdsEntry', (_message.Message,), {
+    'DESCRIPTOR' : _LOADREQUEST_IDSENTRY,
+    '__module__' : 'backups_pb2'
+    # @@protoc_insertion_point(class_scope:backups.LoadRequest.IdsEntry)
+    })
+  ,
   'DESCRIPTOR' : _LOADREQUEST,
   '__module__' : 'backups_pb2'
   # @@protoc_insertion_point(class_scope:backups.LoadRequest)
   })
 _sym_db.RegisterMessage(LoadRequest)
+_sym_db.RegisterMessage(LoadRequest.IdsEntry)
 
 LoadReply = _reflection.GeneratedProtocolMessageType('LoadReply', (_message.Message,), {
+
+  'IdsEntry' : _reflection.GeneratedProtocolMessageType('IdsEntry', (_message.Message,), {
+    'DESCRIPTOR' : _LOADREPLY_IDSENTRY,
+    '__module__' : 'backups_pb2'
+    # @@protoc_insertion_point(class_scope:backups.LoadReply.IdsEntry)
+    })
+  ,
   'DESCRIPTOR' : _LOADREPLY,
   '__module__' : 'backups_pb2'
   # @@protoc_insertion_point(class_scope:backups.LoadReply)
   })
 _sym_db.RegisterMessage(LoadReply)
+_sym_db.RegisterMessage(LoadReply.IdsEntry)
 
 LoadStatusRequest = _reflection.GeneratedProtocolMessageType('LoadStatusRequest', (_message.Message,), {
   'DESCRIPTOR' : _LOADSTATUSREQUEST,
@@ -389,6 +1071,8 @@ CancelLoadReply = _reflection.GeneratedProtocolMessageType('CancelLoadReply', (_
 _sym_db.RegisterMessage(CancelLoadReply)
 
 
+_LOADREQUEST_IDSENTRY._options = None
+_LOADREPLY_IDSENTRY._options = None
 
 _BACKUPS = _descriptor.ServiceDescriptor(
   name='Backups',
@@ -397,8 +1081,8 @@ _BACKUPS = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=415,
-  serialized_end=678,
+  serialized_start=1856,
+  serialized_end=2119,
   methods=[
   _descriptor.MethodDescriptor(
     name='Create',

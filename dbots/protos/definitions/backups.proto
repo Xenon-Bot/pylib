@@ -1,28 +1,105 @@
 syntax = "proto3";
 
+import "chatlogs.proto";
+
 package backups;
+
+message BackupData {
+  message Role {
+    string id = 1;
+    string name = 2;
+    string permissions = 3;
+    uint32 position = 4;
+    bool hoist = 5;
+    bool managed = 6;
+    bool mentionable = 7;
+    uint32 color = 8;
+  }
+  message Channel {
+    message Overwrite {
+      string id = 1;
+      uint32 type = 2;
+      string allow = 3;
+      string deny = 4;
+    }
+
+    string id = 1;
+    uint32 type = 2;
+    string name = 3;
+    uint32 position = 4;
+    repeated Overwrite overwrites = 5;
+    string parent_id = 6;
+
+    // text specific
+    string topic = 7;
+    bool nsfw = 8;
+    uint32 rate_limit_per_user = 9;
+    repeated chatlogs.ChatlogData.Message messages = 10;
+
+    // voice specific
+    uint32 bitrate = 11;
+    uint32 user_limit = 12;
+  }
+  message Ban {
+    string id = 1;
+    string reason = 2;
+  }
+  message Member {
+    string id = 1;
+    string nick = 2;
+    repeated string roles = 3;
+  }
+
+  string id = 1;
+  string name = 2;
+
+  string icon = 3;
+  string region = 4;
+  string afk_channel_id = 5;
+  uint32 afk_timeout = 6;
+  uint32 verification_level = 7;
+  uint32 default_message_notifications = 8;
+  uint32 explicit_content_filter = 9;
+
+  repeated Role roles = 10;
+  repeated Channel channels = 11;
+  repeated Ban bans = 12;
+  repeated Member members = 13;
+
+  // requires guild features
+  string rules_channel_id = 14;
+  string public_updates_channel_id = 15;
+  string preferred_locale = 16;
+  string splash = 17;
+  string banner = 18;
+}
 
 message CreateRequest {
   string guild_id = 1;
   repeated string options = 2;
-  uint32 chatlog = 3;
+  uint32 message_count = 3;
 }
 
 message CreateReply {
   string status = 1;
+  uint32 estimated_time_left = 2; // in seconds
+  BackupData data = 3; // send when done
 }
 
 message LoadRequest {
-  string backup_id = 1;
-  string user_id = 2;
-  string guild_id = 3;
-  string decryption_key = 4;
+  string guild_id = 1;
+  BackupData data = 2;
+  map<string, string> ids = 3;
+  string reason = 4;
   repeated string options = 5;
-  uint32 chatlog = 6;
+  uint32 message_count = 6;
+  repeated string keep_ids = 7;
 }
 
 message LoadReply {
   string status = 1;
+  uint32 estimated_time_left = 2; // in seconds
+  map<string, string> ids = 3; // send when done
 }
 
 message LoadStatusRequest {
@@ -31,13 +108,16 @@ message LoadStatusRequest {
 
 message LoadStatusReply {
   string status = 1;
+  uint32 estimated_time_left = 2; // in seconds
 }
 
 message CancelLoadRequest {
   string guild_id = 1;
 }
 
-message CancelLoadReply {}
+message CancelLoadReply {
+  bool cancelled = 1;
+}
 
 service Backups {
   rpc Create(CreateRequest) returns (stream CreateReply) {}
