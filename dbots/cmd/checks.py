@@ -240,6 +240,30 @@ async def not_in_maintenance(ctx, **_):
             " please be patient and **try again in a few minutes**.",
             f=Format.ERROR
         ))
-        return
+        return False
+
+    return True
+
+
+@Check
+async def guild_only(ctx, **_):
+    if ctx.guild_id is None:
+        await ctx.respond(**create_message(
+            "This command can **only** be used **inside a server**.",
+            f=Format.ERROR
+        ))
+        return False
+
+    return True
+
+
+@Check
+async def dm_only(ctx, **_):
+    if ctx.guild_id is not None:
+        await ctx.respond(**create_message(
+            "This command can **only** be used inside **direct messages**.",
+            f=Format.ERROR
+        ))
+        return False
 
     return True
