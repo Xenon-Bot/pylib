@@ -232,7 +232,7 @@ class Channel(Entity):
                 Permissions(int(ov["allow"])),
                 Permissions(int(ov["deny"]))
             ))
-            for ov in data["permission_overwrites"]
+            for ov in data.get("permission_overwrites", [])
         ]
         self.name = data.get("name")
         self.topic = data.get("topic")

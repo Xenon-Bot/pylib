@@ -41,11 +41,10 @@ class InteractionPayload:
 
         if self.type == InteractionType.APPLICATION_COMMAND:
             self.data = CommandInteractionData(data["data"])
-            self.member = Member(data["member"])
-
-    @property
-    def author(self):
-        return self.member
+            if "member" in data:
+                self.author = Member(data["member"])
+            else:
+                self.author = User(data["user"])
 
 
 class CommandInteractionData:

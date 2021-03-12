@@ -13,7 +13,10 @@ __all__ = (
     "is_guild_owner",
     "has_permissions_level",
     "PermissionLevels",
-    "not_in_maintenance"
+    "not_in_maintenance",
+    "guild_only",
+    "dm_only",
+    "cooldown"
 )
 
 
@@ -153,7 +156,7 @@ def has_permissions_level(destructive=False):
 
 @Check
 async def is_bot_owner(ctx, **_):
-    app = await ctx.bot.http.get_app_info()
+    app = await ctx.bot.http.get_application()
     if ctx.author.id != app["owner"]["id"]:
         team = app.get("team")
         if team is not None:
@@ -238,8 +241,9 @@ async def not_in_maintenance(ctx, **_):
         await ctx.respond(**create_message(
             "The bot is currently in **maintenance**. This command can not be used during maintenance,"
             " please be patient and **try again in a few minutes**.",
-            f=Format.ERROR
-        ))
+            f=Format.ERROR,
+            embed=False
+        ), ephemeral=True)
         return False
 
     return True
@@ -250,8 +254,9 @@ async def guild_only(ctx, **_):
     if ctx.guild_id is None:
         await ctx.respond(**create_message(
             "This command can **only** be used **inside a server**.",
-            f=Format.ERROR
-        ))
+            f=Format.ERROR,
+            embed=False
+        ), ephemeral=True)
         return False
 
     return True
@@ -262,8 +267,9 @@ async def dm_only(ctx, **_):
     if ctx.guild_id is not None:
         await ctx.respond(**create_message(
             "This command can **only** be used inside **direct messages**.",
-            f=Format.ERROR
-        ))
+            f=Format.ERROR,
+            embed=False
+        ), ephemeral=True)
         return False
 
     return True

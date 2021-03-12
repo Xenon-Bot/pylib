@@ -373,11 +373,7 @@ class CommandContext:
 
     @property
     def author(self):
-        return self.payload.member
-
-    @property
-    def member(self):
-        return self.payload.member
+        return self.payload.author
 
     @property
     def resolved(self):
