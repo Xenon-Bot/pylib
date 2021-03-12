@@ -60,18 +60,17 @@ message BackupData {
   uint32 verification_level = 7;
   uint32 default_message_notifications = 8;
   uint32 explicit_content_filter = 9;
+  string system_channel_id = 10;
 
-  repeated Role roles = 10;
-  repeated Channel channels = 11;
-  repeated Ban bans = 12;
-  repeated Member members = 13;
+  repeated Role roles = 11;
+  repeated Channel channels = 12;
+  repeated Ban bans = 13;
+  repeated Member members = 14;
 
   // requires guild features
-  string rules_channel_id = 14;
-  string public_updates_channel_id = 15;
-  string preferred_locale = 16;
-  string splash = 17;
-  string banner = 18;
+  string rules_channel_id = 15;
+  string public_updates_channel_id = 16;
+  string preferred_locale = 17;
 }
 
 message CreateRequest {
