@@ -4,7 +4,7 @@ from .enums import *
 from .flags import *
 from .utils import *
 
-from . import rpc, rest, cmd, protos
+from . import rpc, rest, cmd
 
 __title__ = "dbots"
 __version__ = "0.0.1-pre"
