@@ -11,7 +11,8 @@ from .errors import *
 __all__ = (
     "Route",
     "HTTPClient",
-    "File"
+    "File",
+    "BucketValues"
 )
 
 

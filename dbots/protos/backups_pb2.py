@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\rbackups.proto\x12\x07\x62\x61\x63kups\x1a\x0e\x63hatlogs.proto\"\xbf\x08\n\nBackupData\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x0c\n\x04icon\x18\x03 \x01(\t\x12\x0e\n\x06region\x18\x04 \x01(\t\x12\x16\n\x0e\x61\x66k_channel_id\x18\x05 \x01(\t\x12\x13\n\x0b\x61\x66k_timeout\x18\x06 \x01(\r\x12\x1a\n\x12verification_level\x18\x07 \x01(\r\x12%\n\x1d\x64\x65\x66\x61ult_message_notifications\x18\x08 \x01(\r\x12\x1f\n\x17\x65xplicit_content_filter\x18\t \x01(\r\x12\x19\n\x11system_channel_id\x18\n \x01(\t\x12\'\n\x05roles\x18\x0b \x03(\x0b\x32\x18.backups.BackupData.Role\x12-\n\x08\x63hannels\x18\x0c \x03(\x0b\x32\x1b.backups.BackupData.Channel\x12%\n\x04\x62\x61ns\x18\r \x03(\x0b\x32\x17.backups.BackupData.Ban\x12+\n\x07members\x18\x0e \x03(\x0b\x32\x1a.backups.BackupData.Member\x12\x18\n\x10rules_channel_id\x18\x0f \x01(\t\x12!\n\x19public_updates_channel_id\x18\x10 \x01(\t\x12\x18\n\x10preferred_locale\x18\x11 \x01(\t\x1a\x8b\x01\n\x04Role\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x13\n\x0bpermissions\x18\x03 \x01(\t\x12\x10\n\x08position\x18\x04 \x01(\r\x12\r\n\x05hoist\x18\x05 \x01(\x08\x12\x0f\n\x07managed\x18\x06 \x01(\x08\x12\x13\n\x0bmentionable\x18\x07 \x01(\x08\x12\r\n\x05\x63olor\x18\x08 \x01(\r\x1a\xe5\x02\n\x07\x43hannel\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04type\x18\x02 \x01(\r\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x10\n\x08position\x18\x04 \x01(\r\x12\x39\n\noverwrites\x18\x05 \x03(\x0b\x32%.backups.BackupData.Channel.Overwrite\x12\x11\n\tparent_id\x18\x06 \x01(\t\x12\r\n\x05topic\x18\x07 \x01(\t\x12\x0c\n\x04nsfw\x18\x08 \x01(\x08\x12\x1b\n\x13rate_limit_per_user\x18\t \x01(\r\x12/\n\x08messages\x18\n \x03(\x0b\x32\x1d.chatlogs.ChatlogData.Message\x12\x0f\n\x07\x62itrate\x18\x0b \x01(\r\x12\x12\n\nuser_limit\x18\x0c \x01(\r\x1a\x42\n\tOverwrite\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04type\x18\x02 \x01(\r\x12\r\n\x05\x61llow\x18\x03 \x01(\t\x12\x0c\n\x04\x64\x65ny\x18\x04 \x01(\t\x1a!\n\x03\x42\x61n\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0e\n\x06reason\x18\x02 \x01(\t\x1a\x31\n\x06Member\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04nick\x18\x02 \x01(\t\x12\r\n\x05roles\x18\x03 \x03(\t\"I\n\rCreateRequest\x12\x10\n\x08guild_id\x18\x01 \x01(\t\x12\x0f\n\x07options\x18\x02 \x03(\t\x12\x15\n\rmessage_count\x18\x03 \x01(\r\"]\n\x0b\x43reateReply\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x1b\n\x13\x65stimated_time_left\x18\x02 \x01(\r\x12!\n\x04\x64\x61ta\x18\x03 \x01(\x0b\x32\x13.backups.BackupData\"\xe4\x01\n\x0bLoadRequest\x12\x10\n\x08guild_id\x18\x01 \x01(\t\x12!\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\x13.backups.BackupData\x12*\n\x03ids\x18\x03 \x03(\x0b\x32\x1d.backups.LoadRequest.IdsEntry\x12\x0e\n\x06reason\x18\x04 \x01(\t\x12\x0f\n\x07options\x18\x05 \x03(\t\x12\x15\n\rmessage_count\x18\x06 \x01(\r\x12\x10\n\x08keep_ids\x18\x07 \x03(\t\x1a*\n\x08IdsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x8e\x01\n\tLoadReply\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x1b\n\x13\x65stimated_time_left\x18\x02 \x01(\r\x12(\n\x03ids\x18\x03 \x03(\x0b\x32\x1b.backups.LoadReply.IdsEntry\x1a*\n\x08IdsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"%\n\x11LoadStatusRequest\x12\x10\n\x08guild_id\x18\x01 \x01(\t\">\n\x0fLoadStatusReply\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x1b\n\x13\x65stimated_time_left\x18\x02 \x01(\r\"%\n\x11\x43\x61ncelLoadRequest\x12\x10\n\x08guild_id\x18\x01 \x01(\t\"$\n\x0f\x43\x61ncelLoadReply\x12\x11\n\tcancelled\x18\x01 \x01(\x08\x32\x87\x02\n\x07\x42\x61\x63kups\x12:\n\x06\x43reate\x12\x16.backups.CreateRequest\x1a\x14.backups.CreateReply\"\x00\x30\x01\x12\x34\n\x04Load\x12\x14.backups.LoadRequest\x1a\x12.backups.LoadReply\"\x00\x30\x01\x12\x44\n\nLoadStatus\x12\x1a.backups.LoadStatusRequest\x1a\x18.backups.LoadStatusReply\"\x00\x12\x44\n\nCancelLoad\x12\x1a.backups.CancelLoadRequest\x1a\x18.backups.CancelLoadReply\"\x00\x62\x06proto3'
+  serialized_pb=b'\n\rbackups.proto\x12\x07\x62\x61\x63kups\x1a\x0e\x63hatlogs.proto\"\xbf\x08\n\nBackupData\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x0c\n\x04icon\x18\x03 \x01(\t\x12\x0e\n\x06region\x18\x04 \x01(\t\x12\x16\n\x0e\x61\x66k_channel_id\x18\x05 \x01(\t\x12\x13\n\x0b\x61\x66k_timeout\x18\x06 \x01(\r\x12\x1a\n\x12verification_level\x18\x07 \x01(\r\x12%\n\x1d\x64\x65\x66\x61ult_message_notifications\x18\x08 \x01(\r\x12\x1f\n\x17\x65xplicit_content_filter\x18\t \x01(\r\x12\x19\n\x11system_channel_id\x18\n \x01(\t\x12\'\n\x05roles\x18\x0b \x03(\x0b\x32\x18.backups.BackupData.Role\x12-\n\x08\x63hannels\x18\x0c \x03(\x0b\x32\x1b.backups.BackupData.Channel\x12%\n\x04\x62\x61ns\x18\r \x03(\x0b\x32\x17.backups.BackupData.Ban\x12+\n\x07members\x18\x0e \x03(\x0b\x32\x1a.backups.BackupData.Member\x12\x18\n\x10rules_channel_id\x18\x0f \x01(\t\x12!\n\x19public_updates_channel_id\x18\x10 \x01(\t\x12\x18\n\x10preferred_locale\x18\x11 \x01(\t\x1a\x8b\x01\n\x04Role\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x13\n\x0bpermissions\x18\x03 \x01(\t\x12\x10\n\x08position\x18\x04 \x01(\r\x12\r\n\x05hoist\x18\x05 \x01(\x08\x12\x0f\n\x07managed\x18\x06 \x01(\x08\x12\x13\n\x0bmentionable\x18\x07 \x01(\x08\x12\r\n\x05\x63olor\x18\x08 \x01(\r\x1a\xe5\x02\n\x07\x43hannel\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04type\x18\x02 \x01(\r\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x10\n\x08position\x18\x04 \x01(\r\x12\x39\n\noverwrites\x18\x05 \x03(\x0b\x32%.backups.BackupData.Channel.Overwrite\x12\x11\n\tparent_id\x18\x06 \x01(\t\x12\r\n\x05topic\x18\x07 \x01(\t\x12\x0c\n\x04nsfw\x18\x08 \x01(\x08\x12\x1b\n\x13rate_limit_per_user\x18\t \x01(\r\x12/\n\x08messages\x18\n \x03(\x0b\x32\x1d.chatlogs.ChatlogData.Message\x12\x0f\n\x07\x62itrate\x18\x0b \x01(\r\x12\x12\n\nuser_limit\x18\x0c \x01(\r\x1a\x42\n\tOverwrite\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04type\x18\x02 \x01(\r\x12\r\n\x05\x61llow\x18\x03 \x01(\t\x12\x0c\n\x04\x64\x65ny\x18\x04 \x01(\t\x1a!\n\x03\x42\x61n\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0e\n\x06reason\x18\x02 \x01(\t\x1a\x31\n\x06Member\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04nick\x18\x02 \x01(\t\x12\r\n\x05roles\x18\x03 \x03(\t\"I\n\rCreateRequest\x12\x10\n\x08guild_id\x18\x01 \x01(\t\x12\x0f\n\x07options\x18\x02 \x03(\t\x12\x15\n\rmessage_count\x18\x03 \x01(\r\"]\n\x0b\x43reateReply\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x1b\n\x13\x65stimated_time_left\x18\x02 \x01(\r\x12!\n\x04\x64\x61ta\x18\x03 \x01(\x0b\x32\x13.backups.BackupData\"\xe4\x01\n\x0bLoadRequest\x12\x10\n\x08guild_id\x18\x01 \x01(\t\x12!\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\x13.backups.BackupData\x12*\n\x03ids\x18\x03 \x03(\x0b\x32\x1d.backups.LoadRequest.IdsEntry\x12\x0e\n\x06reason\x18\x04 \x01(\t\x12\x0f\n\x07options\x18\x05 \x03(\t\x12\x15\n\rmessage_count\x18\x06 \x01(\r\x12\x10\n\x08keep_ids\x18\x07 \x03(\t\x1a*\n\x08IdsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x9f\x01\n\tLoadReply\x12\x0e\n\x06option\x18\x01 \x01(\t\x12\x0f\n\x07\x64\x65tails\x18\x02 \x01(\t\x12\x1b\n\x13\x65stimated_time_left\x18\x03 \x01(\r\x12(\n\x03ids\x18\x04 \x03(\x0b\x32\x1b.backups.LoadReply.IdsEntry\x1a*\n\x08IdsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"%\n\x11LoadStatusRequest\x12\x10\n\x08guild_id\x18\x01 \x01(\t\"`\n\x0fLoadStatusReply\x12\x0e\n\x06option\x18\x01 \x01(\t\x12\x0f\n\x07\x64\x65tails\x18\x02 \x01(\t\x12\x0f\n\x07options\x18\x03 \x03(\t\x12\x1b\n\x13\x65stimated_time_left\x18\x04 \x01(\r\"%\n\x11\x43\x61ncelLoadRequest\x12\x10\n\x08guild_id\x18\x01 \x01(\t\"$\n\x0f\x43\x61ncelLoadReply\x12\x11\n\tcancelled\x18\x01 \x01(\x08\x32\x87\x02\n\x07\x42\x61\x63kups\x12:\n\x06\x43reate\x12\x16.backups.CreateRequest\x1a\x14.backups.CreateReply\"\x00\x30\x01\x12\x34\n\x04Load\x12\x14.backups.LoadRequest\x1a\x12.backups.LoadReply\"\x00\x30\x01\x12\x44\n\nLoadStatus\x12\x1a.backups.LoadStatusRequest\x1a\x18.backups.LoadStatusReply\"\x00\x12\x44\n\nCancelLoad\x12\x1a.backups.CancelLoadRequest\x1a\x18.backups.CancelLoadReply\"\x00\x62\x06proto3'
   ,
   dependencies=[chatlogs__pb2.DESCRIPTOR,])
 
@@ -745,22 +745,29 @@ _LOADREPLY = _descriptor.Descriptor(
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='status', full_name='backups.LoadReply.status', index=0,
+      name='option', full_name='backups.LoadReply.option', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='estimated_time_left', full_name='backups.LoadReply.estimated_time_left', index=1,
-      number=2, type=13, cpp_type=3, label=1,
+      name='details', full_name='backups.LoadReply.details', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='estimated_time_left', full_name='backups.LoadReply.estimated_time_left', index=2,
+      number=3, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='ids', full_name='backups.LoadReply.ids', index=2,
-      number=3, type=11, cpp_type=10, label=3,
+      name='ids', full_name='backups.LoadReply.ids', index=3,
+      number=4, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -778,7 +785,7 @@ _LOADREPLY = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=1534,
-  serialized_end=1676,
+  serialized_end=1693,
 )
 
 
@@ -809,8 +816,8 @@ _LOADSTATUSREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1678,
-  serialized_end=1715,
+  serialized_start=1695,
+  serialized_end=1732,
 )
 
 
@@ -823,15 +830,29 @@ _LOADSTATUSREPLY = _descriptor.Descriptor(
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='status', full_name='backups.LoadStatusReply.status', index=0,
+      name='option', full_name='backups.LoadStatusReply.option', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='estimated_time_left', full_name='backups.LoadStatusReply.estimated_time_left', index=1,
-      number=2, type=13, cpp_type=3, label=1,
+      name='details', full_name='backups.LoadStatusReply.details', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='options', full_name='backups.LoadStatusReply.options', index=2,
+      number=3, type=9, cpp_type=9, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='estimated_time_left', full_name='backups.LoadStatusReply.estimated_time_left', index=3,
+      number=4, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -848,8 +869,8 @@ _LOADSTATUSREPLY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1717,
-  serialized_end=1779,
+  serialized_start=1734,
+  serialized_end=1830,
 )
 
 
@@ -880,8 +901,8 @@ _CANCELLOADREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1781,
-  serialized_end=1818,
+  serialized_start=1832,
+  serialized_end=1869,
 )
 
 
@@ -912,8 +933,8 @@ _CANCELLOADREPLY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1820,
-  serialized_end=1856,
+  serialized_start=1871,
+  serialized_end=1907,
 )
 
 _BACKUPDATA_ROLE.containing_type = _BACKUPDATA
@@ -1074,8 +1095,8 @@ _BACKUPS = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=1859,
-  serialized_end=2122,
+  serialized_start=1910,
+  serialized_end=2173,
   methods=[
   _descriptor.MethodDescriptor(
     name='Create',

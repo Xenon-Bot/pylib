@@ -38,6 +38,7 @@ class InteractionBot:
         self.redis = None
 
         self.listeners = {}
+        self.modules = set()
 
     @property
     def loop(self):
@@ -139,6 +140,7 @@ class InteractionBot:
             self.remove_listener(event, future, check=check)
 
     def load_module(self, module):
+        self.modules.add(module)
         for cmd in module.commands:
             self.commands.append(cmd)
 
@@ -179,10 +181,9 @@ class InteractionBot:
         try:
             return await asyncio.wait_for(ctx.future, timeout=2)
         except asyncio.TimeoutError:
-            if not ctx.future.done():
-                ctx.future.set_result(None)
-
-            return InteractionResponse.defer()
+            resp = InteractionResponse.defer()
+            await ctx.respond_with(resp)
+            return resp
         except Exception as e:
             return await self.on_command_error(ctx, e)
 
@@ -244,6 +245,9 @@ class InteractionBot:
         self.http.application_id = app["id"]
         for t in self.tasks:
             self.loop.create_task(t.run())
+
+        for module in self.modules:
+            self.loop.create_task(module.post_setup())
 
     def _commands_endpoint(self, guild_id=None):
         if guild_id is not None or self.guild_id is not None:

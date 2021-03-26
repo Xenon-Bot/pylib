@@ -39,3 +39,6 @@ class Module:
             return Task(_callable, **td)
 
         return _predicate
+
+    async def post_setup(self):
+        pass

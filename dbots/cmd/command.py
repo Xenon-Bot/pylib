@@ -2,6 +2,8 @@ from enum import IntEnum
 import inspect
 import re
 import types
+import time
+import asyncio
 
 from .response import *
 from .errors import *
@@ -101,7 +103,7 @@ class Command:
         self.options = kwargs.get("options", [])
         self.sub_commands = []
 
-        self.hidden = kwargs.get("hidden")
+        self.visible = kwargs.get("visible", True)
         self.checks = kwargs.get("checks", [])
         self.guild_id = kwargs.get("guild_id")
         self.register = kwargs.get("register", True)
@@ -149,7 +151,8 @@ class Command:
         return {
             "name": self.name,
             "description": self.description,
-            "options": [o.to_payload() for o in self.options] + [s.to_payload() for s in self.sub_commands]
+            "options": [o.to_payload() for o in self.options] + [s.to_payload() for s in self.sub_commands],
+            "default_permission": self.visible
         }
 
 
@@ -194,7 +197,6 @@ class SubCommand:
         self.long_description = kwargs.get("long_description")
         self.options = kwargs.get("options", [])
 
-        self.hidden = kwargs.get("hidden")
         self.parent = kwargs.get("parent")
         self.checks = kwargs.get("checks", [])
 
@@ -223,7 +225,6 @@ class SubCommandGroup:
         self.options = kwargs.get("options", [])
         self.sub_commands = []
 
-        self.hidden = kwargs.get("hidden")
         self.parent = kwargs.get("parent")
         self.checks = kwargs.get("checks", [])
 
@@ -278,6 +279,7 @@ class CommandContext:
         self.payload = payload
         self.command = command
         self._http_cache = {}
+        self._last_message = "@original"
 
         self.future = bot.loop.create_future()
 
@@ -286,11 +288,13 @@ class CommandContext:
             if response.type == InteractionResponseType.DEFERRED:
                 return  # We can't defer via webhooks; response was most likely already deffered
 
-            return await self.bot.http.create_interaction_response(
+            msg = await self.bot.http.create_interaction_response(
                 self.token,
                 files=response.files if len(response.files) > 0 else None,
                 **response.data
             )
+            self._last_message = msg.id
+            return msg
 
         else:
             self.future.set_result(response)
@@ -301,18 +305,18 @@ class CommandContext:
     def defer(self):
         return self.respond_with(InteractionResponse.defer())
 
-    async def get_response(self, message_id="@original"):
-        return await self.bot.http.get_interaction_response(self.token, message_id)
+    async def get_response(self, message_id=None):
+        return await self.bot.http.get_interaction_response(self.token, message_id or self._last_message)
 
-    async def edit_response(self, *args, message_id="@original", **kwargs):
+    async def edit_response(self, *args, message_id=None, **kwargs):
         return await self.bot.http.edit_interaction_response(
             self.token,
-            message_id,
+            message_id or self._last_message,
             **InteractionResponse.message(*args, **kwargs).data
         )
 
-    async def delete_response(self, message_id="@original"):
-        return await self.bot.http.delete_interaction_response(self.token, message_id)
+    async def delete_response(self, message_id=None):
+        return await self.bot.http.delete_interaction_response(self.token, message_id or self._last_message)
 
     async def fetch_channel(self):
         if "channel" in self._http_cache:
@@ -354,6 +358,18 @@ class CommandContext:
         member = await self.bot.http.get_guild_member(self.guild_id, self.bot.http.application_id)
         self._http_cache["member"] = member
         return member
+
+    @property
+    def deferred(self):
+        try:
+            res = self.future.result()
+            return res.type == InteractionResponseType.DEFERRED
+        except:
+            return False
+
+    @property
+    def waiting(self):
+        return not self.future.done()
 
     @property
     def token(self):

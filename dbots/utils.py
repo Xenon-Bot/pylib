@@ -2,6 +2,7 @@ import random
 from datetime import datetime, timedelta
 import zlib
 import re
+import base64
 
 
 __all__ = (
@@ -118,12 +119,12 @@ def timedelta_to_string(td: timedelta, precision="s"):
         count, seconds = divmod(seconds, mp)
         count = int(count)
         if count > 0:
-            result += f" {count} {names[-2] if count == 1 else names[-1]}"
+            result += f", {count} {names[-2] if count == 1 else names[-1]}"
 
         if precision in names:
             break
 
-    return result.strip()
+    return result.strip(" ,")
 
 
 def string_to_timedelta(string):

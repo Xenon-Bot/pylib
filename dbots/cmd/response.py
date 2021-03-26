@@ -18,6 +18,9 @@ class InteractionResponse:
         self.type = type
         self.files = kwargs.pop("files", [])
         self.data = kwargs
+        if "allowed_mentions" not in self.data:
+            self.data["allowed_mentions"] = {"parse": ["users"]}
+
         self.data["content"] = content
         if kwargs.get("ephemeral"):
             self.data["flags"] = 1 << 6

@@ -96,9 +96,10 @@ message LoadRequest {
 }
 
 message LoadReply {
-  string status = 1;
-  uint32 estimated_time_left = 2; // in seconds
-  map<string, string> ids = 3; // send when done
+  string option = 1;
+  string details = 2;
+  uint32 estimated_time_left = 3; // in seconds
+  map<string, string> ids = 4; // send when done
 }
 
 message LoadStatusRequest {
@@ -106,8 +107,10 @@ message LoadStatusRequest {
 }
 
 message LoadStatusReply {
-  string status = 1;
-  uint32 estimated_time_left = 2; // in seconds
+  string option = 1;
+  string details = 2;
+  repeated string options = 3;
+  uint32 estimated_time_left = 4; // in seconds
 }
 
 message CancelLoadRequest {
