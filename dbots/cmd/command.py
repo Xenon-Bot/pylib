@@ -2,7 +2,6 @@ from enum import IntEnum
 import inspect
 import re
 import types
-import time
 import asyncio
 
 from .response import *
@@ -299,6 +298,7 @@ class CommandContext:
 
         else:
             self.future.set_result(response)
+            await asyncio.sleep(0.3)
 
     def respond(self, *args, **kwargs):
         return self.respond_with(InteractionResponse.message(*args, **kwargs))
