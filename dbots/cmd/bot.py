@@ -156,15 +156,16 @@ class InteractionBot:
         await ctx.defer()
 
     async def execute_command(self, command, payload, remaining_options):
-        ctx = self.ctx_klass(self, command, payload)
+        ctx = self.ctx_klass(self, command, payload, args=remaining_options)
 
         async def _executor():
             try:
                 values = {}
                 for option in remaining_options:
                     matching_option = iterable_get(command.options, name=option.name)
-                    value = matching_option.converter(option.value)
-                    values[option.name] = value
+                    if matching_option is not None:
+                        value = matching_option.converter(option.value)
+                        values[option.name] = value
 
                 for check in command.checks:
                     res = await check.run(ctx, **values)

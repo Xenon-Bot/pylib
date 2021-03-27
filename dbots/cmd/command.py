@@ -274,10 +274,11 @@ class CommandOptionChoice:
 
 
 class CommandContext:
-    def __init__(self, bot, command, payload):
+    def __init__(self, bot, command, payload, args):
         self.bot = bot
         self.payload = payload
         self.command = command
+        self.args = args
         self._http_cache = {}
         self._last_message = "@original"
 
