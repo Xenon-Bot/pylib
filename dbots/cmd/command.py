@@ -368,29 +368,8 @@ class CommandContext:
         except:
             return False
 
-    @property
-    def waiting(self):
-        return not self.future.done()
-
-    @property
-    def token(self):
-        return self.payload.token
-
-    @property
-    def guild_id(self):
-        return self.payload.guild_id
-
-    @property
-    def channel_id(self):
-        return self.payload.channel_id
-
-    @property
-    def data(self):
-        return self.payload.data
-
-    @property
-    def author(self):
-        return self.payload.author
+    def __getattr__(self, item):
+        return getattr(self.payload, item)
 
     @property
     def resolved(self):
