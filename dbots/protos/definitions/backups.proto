@@ -67,6 +67,8 @@ message BackupData {
   repeated Ban bans = 13;
   repeated Member members = 14;
 
+  map<string, chatlogs.User> users = 19;
+
   // requires guild features
   string rules_channel_id = 15;
   string public_updates_channel_id = 16;
