@@ -183,7 +183,7 @@ class InteractionBot:
             self.loop.call_later(2, ctx.defer)
 
         try:
-            return await ctx.future
+            return await ctx.wait()
         except Exception as e:
             return await self.on_command_error(ctx, e)
 

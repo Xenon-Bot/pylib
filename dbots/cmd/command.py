@@ -292,7 +292,7 @@ class CommandContext:
         self._http_cache = {}
 
         self.state = ContextState.NOT_REPLIED
-        self.future = bot.loop.create_future()
+        self._future = bot.loop.create_future()
 
     async def respond(self, *args, **kwargs):
         resp = InteractionResponse.message(*args, **kwargs)
@@ -301,7 +301,7 @@ class CommandContext:
 
         try:
             if self.state == ContextState.NOT_REPLIED:
-                self.future.set_result(resp)
+                self._future.set_result(resp)
             elif self.state == ContextState.DEFERRED:
                 return await self.edit_response(*args, message_id="@original", **kwargs)
             else:
@@ -317,7 +317,7 @@ class CommandContext:
 
     def defer(self):
         if self.state == ContextState.NOT_REPLIED:
-            self.future.set_result(InteractionResponse.defer())
+            self._future.set_result(InteractionResponse.defer())
             self.state = ContextState.DEFERRED
 
     async def get_response(self, message_id="@original"):
@@ -357,6 +357,9 @@ class CommandContext:
 
                 await asyncio.sleep(0.3 * (i + 1))
                 continue
+
+    async def wait(self):
+        return await self._future
 
     async def fetch_channel(self):
         if "channel" in self._http_cache:
@@ -398,14 +401,6 @@ class CommandContext:
         member = await self.bot.http.get_guild_member(self.guild_id, self.bot.http.application_id)
         self._http_cache["member"] = member
         return member
-
-    @property
-    def deferred(self):
-        try:
-            res = self.future.result()
-            return res.type == InteractionResponseType.DEFERRED
-        except:
-            return False
 
     def __getattr__(self, item):
         return getattr(self.payload, item)
