@@ -7,6 +7,7 @@ import asyncio
 from .response import *
 from .errors import *
 from .checks import *
+from ..rest import *
 
 __all__ = (
     "make_command",
@@ -298,7 +299,6 @@ class CommandContext:
 
         else:
             self.future.set_result(response)
-            await asyncio.sleep(1)
 
     def respond(self, *args, **kwargs):
         return self.respond_with(InteractionResponse.message(*args, **kwargs))
@@ -310,14 +310,32 @@ class CommandContext:
         return await self.bot.http.get_interaction_response(self.token, message_id or self._last_message)
 
     async def edit_response(self, *args, message_id=None, **kwargs):
-        return await self.bot.http.edit_interaction_response(
-            self.token,
-            message_id or self._last_message,
-            **InteractionResponse.message(*args, **kwargs).data
-        )
+        message_id = message_id or self._last_message
+        for i in range(5):
+            try:
+                return await self.bot.http.edit_interaction_response(
+                    self.token,
+                    message_id,
+                    **InteractionResponse.message(*args, **kwargs).data
+                )
+            except HTTPNotFound:
+                if message_id != "@original" or i == 4:
+                    raise
+
+                await asyncio.sleep(0.3 * (i + 1))
+                continue
 
     async def delete_response(self, message_id=None):
-        return await self.bot.http.delete_interaction_response(self.token, message_id or self._last_message)
+        message_id = message_id or self._last_message
+        for i in range(5):
+            try:
+                return await self.bot.http.delete_interaction_response(self.token, message_id)
+            except HTTPNotFound:
+                if message_id != "@original" or i == 4:
+                    raise
+
+                await asyncio.sleep(0.3 * (i + 1))
+                continue
 
     async def fetch_channel(self):
         if "channel" in self._http_cache:
