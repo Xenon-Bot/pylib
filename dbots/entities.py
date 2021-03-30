@@ -206,12 +206,31 @@ class Guild(PartialGuild):
 
         return Asset(self._http, f"banners/{self.id}/{self.banner}.{fmt}")
 
-    async def fetch_channels(self):
-        self.channels = await self.http.get_guild_channels(self.id)
-        return self.channels
+    def compute_permissions(self, member):
+        if self.owner == member.id:
+            return Permissions.all()
 
-    async def fetch_bans(self):
-        return []
+        perms = Permissions.none()
+        roles = sorted(self.roles, key=lambda r: r.position)
+        for role in roles:
+            if role.id in member.roles:
+                perms.value |= role.permissions.value
+
+        return perms
+
+    def get_role(self, role_id):
+        for role in self.roles:
+            if role.id == role_id:
+                return role
+
+        return None
+
+    def get_channel(self, channel_id):
+        for channel in self.channels:
+            if channel.id == channel_id:
+                return channel
+
+        return None
 
 
 class Channel(Entity):
@@ -493,3 +512,6 @@ class Webhook(Entity):
     @property
     def url(self):
         return "https://discord.com/api/v8/webhooks/{0.id}/{0.token}".format(self)
+
+    def to_dict(self):
+        return self._data

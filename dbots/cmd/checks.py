@@ -1,8 +1,6 @@
 import inspect
 from enum import IntEnum
 
-from .. import Permissions
-
 from .formatter import *
 
 __all__ = (
@@ -71,15 +69,7 @@ def bot_has_permissions(*args, **kwargs):
         bot_member = await ctx.fetch_bot_member()
         guild = await ctx.fetch_guild()
 
-        if bot_member.id == guild.owner_id:
-            return True
-
-        perms = Permissions.none()
-        roles = sorted(guild.roles, key=lambda r: r.position)
-        for role in roles:
-            if role.id in bot_member.roles:
-                perms.value |= role.permissions.value
-
+        perms = guild.compute_permissions(bot_member)
         if perms.administrator:
             return True
 

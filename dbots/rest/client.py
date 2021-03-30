@@ -448,7 +448,8 @@ class RouteMixin:
         return self.request(
             Route("POST", "/channels/{channel_id}/webhooks",
                   channel_id=entity_or_id(channel)),
-            json=make_json(options, ("name", "avatar"))
+            json=make_json(options, ("name", "avatar")),
+            converter=Webhook
         )
 
     def create_webhook_message(self, webhook, wait=False, **options):

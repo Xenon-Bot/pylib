@@ -2,7 +2,6 @@ import random
 from datetime import datetime, timedelta
 import zlib
 import re
-import base64
 
 
 __all__ = (
