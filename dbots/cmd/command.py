@@ -298,7 +298,7 @@ class CommandContext:
 
         else:
             self.future.set_result(response)
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(1)
 
     def respond(self, *args, **kwargs):
         return self.respond_with(InteractionResponse.message(*args, **kwargs))
