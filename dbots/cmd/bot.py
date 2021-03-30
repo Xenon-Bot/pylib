@@ -179,12 +179,11 @@ class InteractionBot:
                 await self.on_command_error(ctx, e)
 
         self.loop.create_task(_executor())
+        if command.auto_defer:
+            self.loop.call_later(2, ctx.defer)
+
         try:
-            return await asyncio.wait_for(ctx.future, timeout=2)
-        except asyncio.TimeoutError:
-            resp = InteractionResponse.defer()
-            await ctx.respond_with(resp)
-            return resp
+            return await ctx.future
         except Exception as e:
             return await self.on_command_error(ctx, e)
 

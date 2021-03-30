@@ -17,7 +17,8 @@ __all__ = (
     "CommandOptionChoice",
     "SubCommand",
     "SubCommandGroup",
-    "CommandContext"
+    "CommandContext",
+    "ContextState"
 )
 
 
@@ -107,6 +108,7 @@ class Command:
         self.checks = kwargs.get("checks", [])
         self.guild_id = kwargs.get("guild_id")
         self.register = kwargs.get("register", True)
+        self.auto_defer = kwargs.get("auto_defer", True)
 
     @property
     def full_name(self):
@@ -199,6 +201,7 @@ class SubCommand:
 
         self.parent = kwargs.get("parent")
         self.checks = kwargs.get("checks", [])
+        self.auto_defer = kwargs.get("auto_defer", True)
 
     @property
     def full_name(self):
@@ -227,6 +230,7 @@ class SubCommandGroup:
 
         self.parent = kwargs.get("parent")
         self.checks = kwargs.get("checks", [])
+        self.auto_defer = kwargs.get("auto_defer", True)
 
     @property
     def full_name(self):
@@ -273,6 +277,12 @@ class CommandOptionChoice:
         }
 
 
+class ContextState(IntEnum):
+    NOT_REPLIED = 0
+    DEFERRED = 1
+    REPLIED = 2
+
+
 class CommandContext:
     def __init__(self, bot, command, payload, args):
         self.bot = bot
@@ -280,58 +290,69 @@ class CommandContext:
         self.command = command
         self.args = args
         self._http_cache = {}
-        self._last_message = "@original"
 
+        self.state = ContextState.NOT_REPLIED
         self.future = bot.loop.create_future()
 
-    async def respond_with(self, response):
-        if self.future.done():
-            if response.type == InteractionResponseType.DEFERRED:
-                return  # We can't defer via webhooks; response was most likely already deffered
+    async def respond(self, *args, **kwargs):
+        resp = InteractionResponse.message(*args, **kwargs)
+        if self.state == ContextState.NOT_REPLIED and len(resp.files) != 0:
+            self.defer()
 
-            msg = await self.bot.http.create_interaction_response(
-                self.token,
-                files=response.files if len(response.files) > 0 else None,
-                **response.data
-            )
-            self._last_message = msg.id
-            return msg
-
+        try:
+            if self.state == ContextState.NOT_REPLIED:
+                self.future.set_result(resp)
+            elif self.state == ContextState.DEFERRED:
+                return await self.edit_response(*args, message_id="@original", **kwargs)
+            else:
+                return await self.bot.http.create_interaction_response(
+                    self.token,
+                    files=resp.files if len(resp.files) > 0 else None,
+                    **resp.data
+                )
+        except Exception as e:
+            raise e
         else:
-            self.future.set_result(response)
-
-    def respond(self, *args, **kwargs):
-        return self.respond_with(InteractionResponse.message(*args, **kwargs))
+            self.state = ContextState.REPLIED
 
     def defer(self):
-        return self.respond_with(InteractionResponse.defer())
+        if self.state == ContextState.NOT_REPLIED:
+            self.future.set_result(InteractionResponse.defer())
+            self.state = ContextState.DEFERRED
 
-    async def get_response(self, message_id=None):
-        return await self.bot.http.get_interaction_response(self.token, message_id or self._last_message)
+    async def get_response(self, message_id="@original"):
+        for i in range(3):
+            try:
+                return await self.bot.http.get_interaction_response(self.token, message_id)
+            except HTTPNotFound:
+                if message_id != "@original" or i == 2:
+                    raise
 
-    async def edit_response(self, *args, message_id=None, **kwargs):
-        message_id = message_id or self._last_message
-        for i in range(5):
+                await asyncio.sleep(0.3 * (i + 1))
+
+    async def edit_response(self, *args, message_id="@original", **kwargs):
+        resp = InteractionResponse.message(*args, **kwargs)
+        for i in range(3):
             try:
                 return await self.bot.http.edit_interaction_response(
                     self.token,
                     message_id,
-                    **InteractionResponse.message(*args, **kwargs).data
+                    files=resp.files if len(resp.files) > 0 else None,
+                    **resp.data
                 )
             except HTTPNotFound:
-                if message_id != "@original" or i == 4:
+                if message_id != "@original" or i == 2:
                     raise
 
                 await asyncio.sleep(0.3 * (i + 1))
                 continue
 
-    async def delete_response(self, message_id=None):
-        message_id = message_id or self._last_message
-        for i in range(5):
+    async def delete_response(self, message_id="@original"):
+        for i in range(3):
             try:
                 return await self.bot.http.delete_interaction_response(self.token, message_id)
             except HTTPNotFound:
-                if message_id != "@original" or i == 4:
+                if message_id != "@original" or i == 2:
                     raise
 
                 await asyncio.sleep(0.3 * (i + 1))
@@ -388,7 +409,3 @@ class CommandContext:
 
     def __getattr__(self, item):
         return getattr(self.payload, item)
-
-    @property
-    def resolved(self):
-        return self.payload.data.resolved
