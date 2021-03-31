@@ -22,7 +22,7 @@ class InteractionResponse:
             self.data["allowed_mentions"] = {"parse": ["users"]}
 
         self.data["content"] = content
-        if kwargs.get("ephemeral"):
+        if kwargs.pop("ephemeral", False):
             self.data["flags"] = 1 << 6
 
     @classmethod
@@ -30,17 +30,14 @@ class InteractionResponse:
         return cls(InteractionResponseType.PONG)
 
     @classmethod
-    def defer(cls):
-        return cls(InteractionResponseType.DEFERRED)
+    def defer(cls, *args, **kwargs):
+        return cls(InteractionResponseType.DEFERRED, *args, **kwargs)
 
     @classmethod
     def message(cls, content=None, **kwargs):
         return cls(InteractionResponseType.CHANNEL_MESSAGE, content=content, **kwargs)
 
     def to_dict(self):
-        if self.type == InteractionResponseType.DEFERRED:
-            return {"type": self.type.value}
-
         return {
             "type": self.type.value,
             "data": self.data

@@ -108,7 +108,7 @@ class Command:
         self.checks = kwargs.get("checks", [])
         self.guild_id = kwargs.get("guild_id")
         self.register = kwargs.get("register", True)
-        self.auto_defer = kwargs.get("auto_defer", True)
+        self.ephemeral = kwargs.get("ephemeral", False)
 
     @property
     def full_name(self):
@@ -201,7 +201,7 @@ class SubCommand:
 
         self.parent = kwargs.get("parent")
         self.checks = kwargs.get("checks", [])
-        self.auto_defer = kwargs.get("auto_defer", True)
+        self.ephemeral = kwargs.get("ephemeral", False)
 
     @property
     def full_name(self):
@@ -230,7 +230,7 @@ class SubCommandGroup:
 
         self.parent = kwargs.get("parent")
         self.checks = kwargs.get("checks", [])
-        self.auto_defer = kwargs.get("auto_defer", True)
+        self.ephemeral = kwargs.get("ephemeral", False)
 
     @property
     def full_name(self):
@@ -299,25 +299,26 @@ class CommandContext:
         if self.state == ContextState.NOT_REPLIED and len(resp.files) != 0:
             self.defer()
 
-        try:
-            if self.state == ContextState.NOT_REPLIED:
-                self._future.set_result(resp)
-            elif self.state == ContextState.DEFERRED:
-                return await self.edit_response(*args, message_id="@original", **kwargs)
-            else:
-                return await self.bot.http.create_interaction_response(
-                    self.token,
-                    files=resp.files if len(resp.files) > 0 else None,
-                    **resp.data
-                )
-        except Exception as e:
-            raise e
-        else:
-            self.state = ContextState.REPLIED
-
-    def defer(self):
         if self.state == ContextState.NOT_REPLIED:
-            self._future.set_result(InteractionResponse.defer())
+            self._future.set_result(resp)
+            self.state = ContextState.REPLIED
+        elif self.state == ContextState.DEFERRED:
+            result = await self.edit_response(*args, message_id="@original", **kwargs)
+            self.state = ContextState.REPLIED
+            return result
+        else:
+            result = await self.bot.http.create_interaction_response(
+                self.token,
+                files=resp.files if len(resp.files) > 0 else None,
+                **resp.data
+            )
+            self.state = ContextState.REPLIED
+            return result
+
+    def defer(self, *args, **kwargs):
+        if self.state == ContextState.NOT_REPLIED:
+            resp = InteractionResponse.defer(*args, **kwargs)
+            self._future.set_result(resp)
             self.state = ContextState.DEFERRED
 
     async def get_response(self, message_id="@original"):

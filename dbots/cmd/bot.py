@@ -179,8 +179,7 @@ class InteractionBot:
                 await self.on_command_error(ctx, e)
 
         self.loop.create_task(_executor())
-        if command.auto_defer:
-            self.loop.call_later(2, ctx.defer)
+        self.loop.call_later(2, lambda: ctx.defer(ephemeral=command.ephemeral))
 
         try:
             return await ctx.wait()
