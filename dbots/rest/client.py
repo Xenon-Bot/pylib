@@ -684,7 +684,7 @@ class HTTPClient(RouteMixin):
         if self._session is None:
             bind_to = env.get("BIND_INTERFACE")
             if bind_to is not None:
-                connector = aiohttp.TCPConnector(local_addr=bind_to)
+                connector = aiohttp.TCPConnector(local_addr=(bind_to, 0))
             else:
                 connector = aiohttp.TCPConnector()
 

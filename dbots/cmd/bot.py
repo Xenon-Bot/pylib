@@ -32,7 +32,7 @@ class InteractionBot:
 
         bind_to = env.get("BIND_INTERFACE")
         if bind_to is not None:
-            connector = TCPConnector(local_addr=bind_to)
+            connector = TCPConnector(local_addr=(bind_to, 0))
         else:
             connector = TCPConnector()
 
