@@ -3,6 +3,7 @@ import orjson
 from urllib.parse import quote as urlquote
 import aiohttp
 from enum import Enum
+from os import environ as env
 
 from ..entities import *
 from ..flags import *
@@ -681,7 +682,13 @@ class HTTPClient(RouteMixin):
 
     async def request(self, route, converter=None, wait=True, files=None, **kwargs):
         if self._session is None:
-            self._session = aiohttp.ClientSession(loop=self.loop)
+            bind_to = env.get("BIND_INTERFACE")
+            if bind_to is not None:
+                connector = aiohttp.TCPConnector(local_addr=bind_to)
+            else:
+                connector = aiohttp.TCPConnector()
+
+            self._session = aiohttp.ClientSession(loop=self.loop, connector=connector)
 
         if files is not None:
             data = kwargs.get("data", aiohttp.FormData())

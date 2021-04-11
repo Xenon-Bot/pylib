@@ -1,5 +1,5 @@
 import json
-from aiohttp import web, ClientSession, ContentTypeError
+from aiohttp import web, ClientSession, ContentTypeError, TCPConnector
 import asyncio
 from nacl.signing import VerifyKey
 from nacl.exceptions import BadSignatureError
@@ -7,6 +7,7 @@ import traceback
 import sys
 import inspect
 import aioredis
+from os import environ as env
 
 from ..utils import *
 from ..rest import *
@@ -28,7 +29,14 @@ class InteractionBot:
         self.public_key = VerifyKey(bytes.fromhex(kwargs["public_key"]))
         self.token = kwargs["token"]
         self._loop = kwargs.get("loop")
-        self.session = kwargs.get("session", ClientSession(loop=self.loop))
+
+        bind_to = env.get("BIND_INTERFACE")
+        if bind_to is not None:
+            connector = TCPConnector(local_addr=bind_to)
+        else:
+            connector = TCPConnector()
+
+        self.session = kwargs.get("session", ClientSession(loop=self.loop, connector=connector))
         self.guild_id = kwargs.get("guild_id")  # Can be used during development to avoid the 1 hour cache
         self.app_id = None
         self.ctx_klass = kwargs.get("ctx_klass", CommandContext)
