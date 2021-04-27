@@ -205,6 +205,9 @@ class InteractionBot:
 
             return await self.execute_command(command, payload, remaining_options)
 
+        elif payload.type == InteractionType.APPLICATION_COMPONENT:
+            pass
+
     async def aiohttp_entry(self, request):
         raw_data = await request.text()
         signature = request.headers.get("x-signature-ed25519")

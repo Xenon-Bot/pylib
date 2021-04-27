@@ -1,6 +1,7 @@
 from enum import IntEnum
 
-from .. import Member, User, Role, Channel
+from .. import Member, User, Role, Channel, Message
+from .components import ComponentType
 
 
 __all__ = (
@@ -8,12 +9,14 @@ __all__ = (
     "InteractionPayload",
     "CommandInteractionData",
     "CommandInteractionDataOption",
+    "ComponentInteractionData"
 )
 
 
 class InteractionType(IntEnum):
     PING = 1
     APPLICATION_COMMAND = 2
+    APPLICATION_COMPONENT = 3
 
 
 class ResolvedEntities:
@@ -39,12 +42,18 @@ class InteractionPayload:
         self.token = data.get("token")
         self.version = data.get("version")
 
-        if self.type == InteractionType.APPLICATION_COMMAND:
-            self.data = CommandInteractionData(data["data"])
+        if self.type != InteractionType.PING:
             if "member" in data:
                 self.author = Member(data["member"])
             else:
                 self.author = User(data["user"])
+
+        if self.type == InteractionType.APPLICATION_COMMAND:
+            self.data = CommandInteractionData(data["data"])
+
+        elif self.type == InteractionType.APPLICATION_COMPONENT:
+            self.message = Message(data["message"])
+            self.data = ComponentInteractionData(data["data"])
 
 
 class CommandInteractionData:
@@ -60,3 +69,9 @@ class CommandInteractionDataOption:
         self.name = data["name"]
         self.value = data.get("value")
         self.options = [CommandInteractionDataOption(o) for o in data.get("options", [])]
+
+
+class ComponentInteractionData:
+    def __init__(self, data):
+        self.custom_id = data["custom_id"]
+        self.component_type = ComponentType(data["component_type"])
