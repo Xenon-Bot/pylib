@@ -1,5 +1,5 @@
 import json
-from aiohttp import web, ClientSession, ContentTypeError, TCPConnector
+from aiohttp import web, ClientSession, TCPConnector
 import asyncio
 from nacl.signing import VerifyKey
 from nacl.exceptions import BadSignatureError
@@ -8,6 +8,7 @@ import sys
 import inspect
 import aioredis
 from os import environ as env
+from weakref import WeakValueDictionary
 
 from ..utils import *
 from ..rest import *
@@ -46,6 +47,7 @@ class InteractionBot:
         self.redis = None
 
         self.listeners = {}
+        self.component_listeners = WeakValueDictionary()
         self.modules = set()
 
     @property
@@ -147,6 +149,15 @@ class InteractionBot:
         finally:
             self.remove_listener(event, future, check=check)
 
+    async def wait_for_component_interaction(self, component, timeout=None):
+        custom_id = component.custom_id
+        if custom_id in self.component_listeners:
+            future = self.component_listeners[custom_id]
+        else:
+            future = self.component_listeners[custom_id] = self.loop.create_future()
+
+        return asyncio.wait_for(future, timeout=timeout)
+
     def load_module(self, module):
         self.modules.add(module)
         for cmd in module.commands:
@@ -206,7 +217,12 @@ class InteractionBot:
             return await self.execute_command(command, payload, remaining_options)
 
         elif payload.type == InteractionType.APPLICATION_COMPONENT:
-            pass
+            future = self.component_listeners.get(payload.data.custom_id)
+            if future is not None and not future.done():
+                future.set_result(payload)
+
+            # TODO: I have no idea how I'm supposed to handle the response flow tbh
+            return InteractionResponse.defer()
 
     async def aiohttp_entry(self, request):
         raw_data = await request.text()
