@@ -1,5 +1,7 @@
 from enum import IntEnum
 
+from .components import *
+
 
 __all__ = (
     "InteractionResponseType",
@@ -24,6 +26,26 @@ class InteractionResponse:
         self.data["content"] = content
         if kwargs.pop("ephemeral", False):
             self.data["flags"] = 1 << 6
+
+        components = kwargs.get("components", [])
+        component = kwargs.get("component")
+        if component is not None:
+            components = [ActionRow(component)]
+
+        elif len(components) != 0:
+            if not isinstance(components[0], Component):
+                components = [ActionRow(*row) for row in components]
+
+            elif not isinstance(components[0], ActionRow):
+                components = [ActionRow(*components)]
+
+            else:
+                components = components
+
+        self.data["components"] = [
+            r.to_payload()
+            for r in components
+        ]
 
     @classmethod
     def pong(cls):
