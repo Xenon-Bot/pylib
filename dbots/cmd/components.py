@@ -54,7 +54,7 @@ class Button(Component):
         self.custom_id = kwargs.get("custom_id", uuid4().hex)
         args = kwargs.get("args", [])
         if len(args) != 0:
-            self.custom_id = f"{self.custom_id}${':'.join(args)}"
+            self.custom_id = f"{self.custom_id}?{'&'.join(args)}"
 
         self.style = ButtonStyle(kwargs.get("style", ButtonStyle.PRIMARY))
         self.url = kwargs.get("url")

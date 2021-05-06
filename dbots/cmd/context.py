@@ -156,24 +156,30 @@ class ButtonContext:
     def custom_id(self):
         return self.payload.data.custom_id
 
-    async def update(self, *args, **kwargs):
+    async def edit_response(self, *args, message_id="@original", **kwargs):
         resp = InteractionResponse.message_update(*args, **kwargs)
-        if self.state != ContextState.DEFERRED:
+        if message_id == "@original" and self.state == ContextState.NOT_REPLIED:
             self.state = ContextState.REPLIED
             self._future.set_result(resp)
         else:
             return await self.bot.http.edit_interaction_response(
                 self.token,
-                "@original",
+                message_id,
                 files=resp.files if len(resp.files) > 0 else None,
                 **resp.data
             )
+
+    def update(self, *args, **kwargs):
+        return self.edit_response(*args, message_id="@original", **kwargs)
 
     def defer(self, *args, **kwargs):
         if self.state == ContextState.NOT_REPLIED:
             resp = InteractionResponse.defer_message_update(*args, **kwargs)
             self._future.set_result(resp)
             self.state = ContextState.DEFERRED
+
+    async def delete_response(self, message_id="@original"):
+        return await self.bot.http.delete_interaction_response(self.token, message_id)
 
     async def wait(self):
         return await self._future

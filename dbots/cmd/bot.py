@@ -229,7 +229,7 @@ class InteractionBot:
                 await result
 
         self.loop.create_task(_executor())
-        # self.loop.call_later(2, lambda: ctx.defer())
+        self.loop.call_later(2, lambda: ctx.defer())
 
         return await ctx.wait()
 
@@ -245,13 +245,12 @@ class InteractionBot:
             return await self.execute_command(command, payload, remaining_options)
 
         elif payload.type == InteractionType.APPLICATION_COMPONENT:
-            parts = payload.data.custom_id.split("$")
-            if len(parts) == 0:
-                name = parts
+            parts = payload.data.custom_id.split("?")
+            name = parts[0]
+            if len(parts) == 1:
                 args = []
             else:
-                name = parts[0]
-                args = parts[1].split(":")
+                args = parts[1].split("&")
 
             for button in self.buttons:
                 if button.name == name:
