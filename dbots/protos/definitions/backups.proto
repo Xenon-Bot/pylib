@@ -34,7 +34,7 @@ message BackupData {
     string topic = 7;
     bool nsfw = 8;
     uint32 rate_limit_per_user = 9;
-    repeated chatlogs.ChatlogData.Message messages = 10;
+    chatlogs.ChatlogData chatlog = 10;
 
     // voice specific
     uint32 bitrate = 11;
@@ -45,9 +45,13 @@ message BackupData {
     string reason = 2;
   }
   message Member {
-    string id = 1;
     string nick = 2;
     repeated string roles = 3;
+  }
+  message User {
+    string username = 2;
+    string discriminator = 3;
+    string avatar = 4;
   }
 
   string id = 1;
@@ -65,9 +69,7 @@ message BackupData {
   repeated Role roles = 11;
   repeated Channel channels = 12;
   repeated Ban bans = 13;
-  repeated Member members = 14;
-
-  map<string, chatlogs.User> users = 19;
+  map<string, Member> members = 14;
 
   // requires guild features
   string rules_channel_id = 15;

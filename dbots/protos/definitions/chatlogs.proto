@@ -2,13 +2,6 @@ syntax = "proto3";
 
 package chatlogs;
 
-message User {
-  string id = 1;
-  string username = 2;
-  string discriminator = 3;
-  string avatar = 4;
-}
-
 message CreateRequest {
   string channel_id = 1;
   uint32 message_count = 2;
@@ -61,6 +54,11 @@ message ChatlogData {
     string author_id = 4;
     repeated Attachment attachments = 5;
     repeated Embed embeds = 6;
+  }
+  message User {
+    string username = 2;
+    string discriminator = 3;
+    string avatar = 4;
   }
 
   repeated Message messages = 1;
