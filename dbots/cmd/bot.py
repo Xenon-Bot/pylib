@@ -14,9 +14,11 @@ from ..utils import *
 from ..rest import *
 
 from .command import *
+from .context import *
 from .payloads import *
 from .response import *
 from .task import *
+from .components import *
 
 __all__ = (
     "InteractionBot",
@@ -27,6 +29,7 @@ class InteractionBot:
     def __init__(self, **kwargs):
         self.commands = []
         self.tasks = []
+        self.buttons = []
         self.public_key = VerifyKey(bytes.fromhex(kwargs["public_key"]))
         self.token = kwargs["token"]
         self._loop = kwargs.get("loop")
@@ -84,6 +87,25 @@ class InteractionBot:
             return _predicate
 
         return make_command(Command, _callable, **kwargs)
+
+    def button(self, _callable=None, **kwargs):
+        if _callable is None:
+            def _predicate(_callable):
+                button = PartialButton(
+                    name=kwargs.get("name", _callable.__name__),
+                    callable=_callable
+                )
+                self.buttons.append(button)
+                return button
+
+            return _predicate
+
+        button = PartialButton(
+            name=kwargs.get("name", _callable.__name__),
+            callable=_callable
+        )
+        self.buttons.append(button)
+        return button
 
     def task(self, **td):
         def _predicate(_callable):
@@ -166,6 +188,9 @@ class InteractionBot:
         for t in module.tasks:
             self.tasks.append(t)
 
+        for b in module.buttons:
+            self.buttons.append(b)
+
     async def on_command_error(self, ctx, e):
         if isinstance(e, asyncio.CancelledError):
             raise e
@@ -205,6 +230,19 @@ class InteractionBot:
         except Exception as e:
             return await self.on_command_error(ctx, e)
 
+    async def execute_button(self, button, payload):
+        ctx = ButtonContext(self, button, payload)
+
+        async def _executor():
+            result = button.callable(ctx)
+            if inspect.isawaitable(result):
+                await result
+
+        self.loop.create_task(_executor())
+        # self.loop.call_later(2, lambda: ctx.defer())
+
+        return await ctx.wait()
+
     async def interaction_received(self, payload):
         if payload.type == InteractionType.PING:
             return InteractionResponse.pong()
@@ -221,8 +259,16 @@ class InteractionBot:
             if future is not None and not future.done():
                 future.set_result(payload)
 
-            # TODO: I have no idea how I'm supposed to handle the response flow tbh
-            return InteractionResponse.defer()
+            name = payload.data.custom_id.split(":")[0]
+            for button in self.buttons:
+                if button.name == name:
+                    resp = await self.execute_button(button, payload)
+                    return resp
+
+            return InteractionResponse.message(
+                "Uh, I sadly can't find the button you just clicked :(",
+                ephemeral=True
+            )
 
     async def aiohttp_entry(self, request):
         raw_data = await request.text()

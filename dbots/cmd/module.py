@@ -1,5 +1,6 @@
 from .command import *
 from .task import *
+from .components import *
 
 
 __all__ = (
@@ -13,6 +14,7 @@ class Module:
 
         self.commands = []
         self.tasks = []
+        self.buttons = []
         for name in dir(self):
             attr = getattr(self, name)
             if isinstance(attr, Command):
@@ -23,6 +25,10 @@ class Module:
                 attr.bind(self)
                 self.tasks.append(attr)
 
+            elif isinstance(attr, PartialButton):
+                attr.bind(self)
+                self.buttons.append(attr)
+
     @staticmethod
     def command(_callable=None, **kwargs):
         if _callable is None:
@@ -32,6 +38,22 @@ class Module:
             return _predicate
 
         return make_command(Command, _callable, **kwargs)
+
+    @staticmethod
+    def button(_callable=None, **kwargs):
+        if _callable is None:
+            def _predicate(_callable):
+                return PartialButton(
+                    name=kwargs.get("name", _callable.__name__),
+                    callable=_callable
+                )
+
+            return _predicate
+
+        return PartialButton(
+            name=kwargs.get("name", _callable.__name__),
+            callable=_callable
+        )
 
     @staticmethod
     def task(**td):

@@ -1,5 +1,6 @@
 from enum import IntEnum
 from uuid import uuid4
+import types
 
 
 __all__ = (
@@ -7,7 +8,8 @@ __all__ = (
     "Component",
     "ActionRow",
     "ButtonStyle",
-    "Button"
+    "Button",
+    "PartialButton"
 )
 
 
@@ -65,3 +67,12 @@ class Button(Component):
             "emoji": self.emoji,
             "disabled": self.disabled
         }
+
+
+class PartialButton:
+    def __init__(self, **kwargs):
+        self.name = kwargs["name"]
+        self.callable = kwargs["callable"]
+
+    def bind(self, obj):
+        self.callable = types.MethodType(self.callable, obj)

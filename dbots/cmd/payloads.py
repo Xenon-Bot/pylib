@@ -1,6 +1,6 @@
 from enum import IntEnum
 
-from .. import Member, User, Role, Channel, Message
+from .. import Member, User, Role, Channel, Message, Snowflake
 from .components import ComponentType
 
 
@@ -52,7 +52,11 @@ class InteractionPayload:
             self.data = CommandInteractionData(data["data"])
 
         elif self.type == InteractionType.APPLICATION_COMPONENT:
-            self.message = Message(data["message"])
+            if data["message"].get("flags") == 64:
+                self.message = Snowflake(data["message"]["id"])
+            else:
+                self.message = Message(data["message"])
+
             self.data = ComponentInteractionData(data["data"])
 
 

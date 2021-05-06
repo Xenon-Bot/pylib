@@ -13,6 +13,8 @@ class InteractionResponseType(IntEnum):
     PONG = 1
     CHANNEL_MESSAGE = 4
     DEFERRED = 5
+    DEFERRED_MESSAGE_UPDATE = 6
+    UPDATE_MESSAGE = 7
 
 
 class InteractionResponse:
@@ -33,14 +35,12 @@ class InteractionResponse:
             components = [ActionRow(component)]
 
         elif len(components) != 0:
-            if not isinstance(components[0], Component):
-                components = [ActionRow(*row) for row in components]
-
-            elif not isinstance(components[0], ActionRow):
+            if not isinstance(components[0], ActionRow):
+                print("yeet")
                 components = [ActionRow(*components)]
 
-            else:
-                components = components
+            elif not isinstance(components[0], Component):
+                components = [ActionRow(*row) for row in components]
 
         self.data["components"] = [
             r.to_payload()
@@ -56,8 +56,16 @@ class InteractionResponse:
         return cls(InteractionResponseType.DEFERRED, *args, **kwargs)
 
     @classmethod
-    def message(cls, content=None, **kwargs):
-        return cls(InteractionResponseType.CHANNEL_MESSAGE, content=content, **kwargs)
+    def defer_message_update(cls, *args, **kwargs):
+        return cls(InteractionResponseType.DEFERRED_MESSAGE_UPDATE, *args, **kwargs)
+
+    @classmethod
+    def message(cls, *args, **kwargs):
+        return cls(InteractionResponseType.CHANNEL_MESSAGE, *args, **kwargs)
+
+    @classmethod
+    def message_update(cls, *args, **kwargs):
+        return cls(InteractionResponseType.UPDATE_MESSAGE, *args, **kwargs)
 
     def to_dict(self):
         return {
