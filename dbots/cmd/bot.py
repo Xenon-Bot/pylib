@@ -50,7 +50,6 @@ class InteractionBot:
         self.redis = None
 
         self.listeners = {}
-        self.component_listeners = WeakValueDictionary()
         self.modules = set()
 
     @property
@@ -171,15 +170,6 @@ class InteractionBot:
         finally:
             self.remove_listener(event, future, check=check)
 
-    async def wait_for_component_interaction(self, component, timeout=None):
-        custom_id = component.custom_id
-        if custom_id in self.component_listeners:
-            future = self.component_listeners[custom_id]
-        else:
-            future = self.component_listeners[custom_id] = self.loop.create_future()
-
-        return asyncio.wait_for(future, timeout=timeout)
-
     def load_module(self, module):
         self.modules.add(module)
         for cmd in module.commands:
@@ -255,10 +245,6 @@ class InteractionBot:
             return await self.execute_command(command, payload, remaining_options)
 
         elif payload.type == InteractionType.APPLICATION_COMPONENT:
-            future = self.component_listeners.get(payload.data.custom_id)
-            if future is not None and not future.done():
-                future.set_result(payload)
-
             parts = payload.data.custom_id.split("$")
             if len(parts) == 0:
                 name = parts
