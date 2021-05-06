@@ -57,42 +57,19 @@ class CommandContext:
             self.state = ContextState.DEFERRED
 
     async def get_response(self, message_id="@original"):
-        for i in range(3):
-            try:
-                return await self.bot.http.get_interaction_response(self.token, message_id)
-            except HTTPNotFound:
-                if message_id != "@original" or i == 2:
-                    raise
-
-                await asyncio.sleep(0.3 * (i + 1))
+        return await self.bot.http.get_interaction_response(self.token, message_id)
 
     async def edit_response(self, *args, message_id="@original", **kwargs):
         resp = InteractionResponse.message(*args, **kwargs)
-        for i in range(3):
-            try:
-                return await self.bot.http.edit_interaction_response(
-                    self.token,
-                    message_id,
-                    files=resp.files if len(resp.files) > 0 else None,
-                    **resp.data
-                )
-            except HTTPNotFound:
-                if message_id != "@original" or i == 2:
-                    raise
-
-                await asyncio.sleep(0.3 * (i + 1))
-                continue
+        return await self.bot.http.edit_interaction_response(
+            self.token,
+            message_id,
+            files=resp.files if len(resp.files) > 0 else None,
+            **resp.data
+        )
 
     async def delete_response(self, message_id="@original"):
-        for i in range(3):
-            try:
-                return await self.bot.http.delete_interaction_response(self.token, message_id)
-            except HTTPNotFound:
-                if message_id != "@original" or i == 2:
-                    raise
-
-                await asyncio.sleep(0.3 * (i + 1))
-                continue
+        return await self.bot.http.delete_interaction_response(self.token, message_id)
 
     async def wait(self):
         return await self._future
@@ -155,6 +132,23 @@ class ButtonContext:
     @property
     def custom_id(self):
         return self.payload.data.custom_id
+
+    async def respond(self, *args, **kwargs):
+        resp = InteractionResponse.message(*args, **kwargs)
+        if self.state == ContextState.NOT_REPLIED and len(resp.files) != 0:
+            self.defer()
+
+        if self.state == ContextState.NOT_REPLIED:
+            self._future.set_result(resp)
+            self.state = ContextState.REPLIED
+        else:
+            result = await self.bot.http.create_interaction_response(
+                self.token,
+                files=resp.files if len(resp.files) > 0 else None,
+                **resp.data
+            )
+            self.state = ContextState.REPLIED
+            return result
 
     async def edit_response(self, *args, message_id="@original", **kwargs):
         resp = InteractionResponse.message_update(*args, **kwargs)
