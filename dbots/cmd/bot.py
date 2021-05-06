@@ -230,11 +230,11 @@ class InteractionBot:
         except Exception as e:
             return await self.on_command_error(ctx, e)
 
-    async def execute_button(self, button, payload):
+    async def execute_button(self, button, payload, args):
         ctx = ButtonContext(self, button, payload)
 
         async def _executor():
-            result = button.callable(ctx)
+            result = button.callable(ctx, *args)
             if inspect.isawaitable(result):
                 await result
 
@@ -259,10 +259,17 @@ class InteractionBot:
             if future is not None and not future.done():
                 future.set_result(payload)
 
-            name = payload.data.custom_id.split(":")[0]
+            parts = payload.data.custom_id.split("$")
+            if len(parts) == 0:
+                name = parts
+                args = []
+            else:
+                name = parts[0]
+                args = parts[1].split(":")
+
             for button in self.buttons:
                 if button.name == name:
-                    resp = await self.execute_button(button, payload)
+                    resp = await self.execute_button(button, payload, args)
                     return resp
 
             return InteractionResponse.message(

@@ -52,6 +52,10 @@ class Button(Component):
         super().__init__(type=ComponentType.BUTTON)
         self.label = kwargs["label"]
         self.custom_id = kwargs.get("custom_id", uuid4().hex)
+        args = kwargs.get("args", [])
+        if len(args) != 0:
+            self.custom_id = f"{self.custom_id}${':'.join(args)}"
+
         self.style = ButtonStyle(kwargs.get("style", ButtonStyle.PRIMARY))
         self.url = kwargs.get("url")
         self.emoji = kwargs.get("emoji")
