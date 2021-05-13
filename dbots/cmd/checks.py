@@ -54,7 +54,6 @@ def has_permissions(*args, **kwargs):
 
         await ctx.respond(**create_message(
             f"**You are missing** the following **permissions**: `{', '.join(missing)}`.",
-            embed=False,
             f=Format.ERROR
         ), ephemeral=True)
         return False
@@ -83,7 +82,6 @@ def bot_has_permissions(*args, **kwargs):
 
         await ctx.respond(**create_message(
             f"**The bot is missing** the following **permissions**: `{', '.join(missing)}`.",
-            embed=False,
             f=Format.ERROR
         ), ephemeral=True)
         return False
@@ -97,7 +95,6 @@ async def is_guild_owner(ctx, *args, **kwargs):
     if ctx.author.id != guild.owner_id:
         await ctx.respond(**create_message(
             "Only the **server owner** can use this command.\n",
-            embed=False,
             f=Format.ERROR
         ), ephemeral=True)
         return False
@@ -131,7 +128,6 @@ def has_permissions_level(destructive=False):
                     "Only the **server owner** can use this command.\n"
                     f"The server owner can change this using "
                     f"`/help settings permissions`.",
-                    embed=False,
                     f=Format.ERROR
                 ), ephemeral=True)
                 return False
@@ -156,7 +152,6 @@ async def is_bot_owner(ctx, **_):
 
         await ctx.respond(**create_message(
             "This command can **only** be used by the **bot owner(s)**.",
-            embed=False,
             f=Format.ERROR
         ), ephemeral=True)
         return False
@@ -211,7 +206,6 @@ def cooldown(rate: int, per: int, bucket=CooldownType.AUTHOR, manual=False):
             await ctx.respond(**create_message(
                 f"This **command** is currently on **cooldown**.\n"
                 f"You have to **wait `{remaining}` second(s)** until you can use it again.",
-                embed=False,
                 f=Format.ERROR
             ), ephemeral=True)
             return False
@@ -231,8 +225,7 @@ async def not_in_maintenance(ctx, **_):
         await ctx.respond(**create_message(
             "The bot is currently in **maintenance**. This command can not be used during maintenance,"
             " please be patient and **try again in a few minutes**.",
-            f=Format.ERROR,
-            embed=False
+            f=Format.ERROR
         ), ephemeral=True)
         return False
 
@@ -244,8 +237,7 @@ async def guild_only(ctx, **_):
     if ctx.guild_id is None:
         await ctx.respond(**create_message(
             "This command can **only** be used **inside a server**.",
-            f=Format.ERROR,
-            embed=False
+            f=Format.ERROR
         ), ephemeral=True)
         return False
 
@@ -257,8 +249,7 @@ async def dm_only(ctx, **_):
     if ctx.guild_id is not None:
         await ctx.respond(**create_message(
             "This command can **only** be used inside **direct messages**.",
-            f=Format.ERROR,
-            embed=False
+            f=Format.ERROR
         ), ephemeral=True)
         return False
 
