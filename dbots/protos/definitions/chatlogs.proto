@@ -2,12 +2,6 @@ syntax = "proto3";
 
 package chatlogs;
 
-message CreateRequest {
-  string channel_id = 1;
-  uint32 message_count = 2;
-  string before_id = 3;
-}
-
 message ChatlogData {
   message Message {
     message Attachment {
@@ -65,17 +59,25 @@ message ChatlogData {
   map<string, User> users = 2;
 }
 
+message CreateRequest {
+  string channel_id = 1;
+  uint32 message_count = 2;
+  string before_id = 3;
+}
+
 message CreateReply {
   ChatlogData data = 1;
 }
 
 message LoadRequest {
   string channel_id = 1;
+  ChatlogData data = 2;
+  uint32 message_count = 3;
 }
 
 message LoadReply {}
 
 service Chatlogs {
-  rpc Create(CreateRequest) returns (stream CreateReply) {}
+  rpc Create(CreateRequest) returns (CreateReply) {}
   rpc Load(LoadRequest) returns (stream LoadReply) {}
 }

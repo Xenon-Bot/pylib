@@ -96,13 +96,22 @@ message LoadRequest {
   string reason = 4;
   repeated string options = 5;
   uint32 message_count = 6;
-  repeated string keep_ids = 7;
+}
+
+message LoadStatus {
+  enum State {
+    WAITING = 0;
+    RUNNING = 1;
+    DONE = 3;
+    RATE_LIMIT = 2;
+  }
+  State state = 2;
+  uint32 estimated_time_left = 3; // in seconds
+  string details = 4;
 }
 
 message LoadReply {
-  string option = 1;
-  string details = 2;
-  uint32 estimated_time_left = 3; // in seconds
+  map<string, LoadStatus> options = 1;
   map<string, string> ids = 4; // send when done
 }
 
@@ -111,19 +120,14 @@ message LoadStatusRequest {
 }
 
 message LoadStatusReply {
-  string option = 1;
-  string details = 2;
-  repeated string options = 3;
-  uint32 estimated_time_left = 4; // in seconds
+  map<string, LoadStatus> options = 1;
 }
 
 message CancelLoadRequest {
   string guild_id = 1;
 }
 
-message CancelLoadReply {
-  bool cancelled = 1;
-}
+message CancelLoadReply {}
 
 service Backups {
   rpc Create(CreateRequest) returns (stream CreateReply) {}

@@ -26,7 +26,7 @@ class ChatlogsBase(abc.ABC):
         return {
             '/chatlogs.Chatlogs/Create': grpclib.const.Handler(
                 self.Create,
-                grpclib.const.Cardinality.UNARY_STREAM,
+                grpclib.const.Cardinality.UNARY_UNARY,
                 chatlogs_pb2.CreateRequest,
                 chatlogs_pb2.CreateReply,
             ),
@@ -42,7 +42,7 @@ class ChatlogsBase(abc.ABC):
 class ChatlogsStub:
 
     def __init__(self, channel: grpclib.client.Channel) -> None:
-        self.Create = grpclib.client.UnaryStreamMethod(
+        self.Create = grpclib.client.UnaryUnaryMethod(
             channel,
             '/chatlogs.Chatlogs/Create',
             chatlogs_pb2.CreateRequest,

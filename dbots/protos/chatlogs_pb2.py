@@ -19,56 +19,10 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x0e\x63hatlogs.proto\x12\x08\x63hatlogs\"M\n\rCreateRequest\x12\x12\n\nchannel_id\x18\x01 \x01(\t\x12\x15\n\rmessage_count\x18\x02 \x01(\r\x12\x11\n\tbefore_id\x18\x03 \x01(\t\"\xba\x08\n\x0b\x43hatlogData\x12/\n\x08messages\x18\x01 \x03(\x0b\x32\x1d.chatlogs.ChatlogData.Message\x12/\n\x05users\x18\x02 \x03(\x0b\x32 .chatlogs.ChatlogData.UsersEntry\x1a\xbd\x06\n\x07Message\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0f\n\x07\x63ontent\x18\x02 \x01(\t\x12\x0e\n\x06pinned\x18\x03 \x01(\x08\x12\x11\n\tauthor_id\x18\x04 \x01(\t\x12=\n\x0b\x61ttachments\x18\x05 \x03(\x0b\x32(.chatlogs.ChatlogData.Message.Attachment\x12\x33\n\x06\x65mbeds\x18\x06 \x03(\x0b\x32#.chatlogs.ChatlogData.Message.Embed\x1a+\n\nAttachment\x12\x10\n\x08\x66ilename\x18\x01 \x01(\t\x12\x0b\n\x03url\x18\x02 \x01(\t\x1a\xd0\x04\n\x05\x45mbed\x12\r\n\x05title\x18\x01 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x02 \x01(\t\x12\x0b\n\x03url\x18\x03 \x01(\t\x12\x11\n\ttimestamp\x18\x04 \x01(\x04\x12\r\n\x05\x63olor\x18\x05 \x01(\r\x12:\n\x06\x66ooter\x18\x06 \x01(\x0b\x32*.chatlogs.ChatlogData.Message.Embed.Footer\x12\x38\n\x05image\x18\x07 \x01(\x0b\x32).chatlogs.ChatlogData.Message.Embed.Image\x12@\n\tthumbnail\x18\x08 \x01(\x0b\x32-.chatlogs.ChatlogData.Message.Embed.Thumbnail\x12:\n\x06\x61uthor\x18\t \x01(\x0b\x32*.chatlogs.ChatlogData.Message.Embed.Author\x12\x39\n\x06\x66ields\x18\n \x03(\x0b\x32).chatlogs.ChatlogData.Message.Embed.Field\x1a(\n\x06\x46ooter\x12\x0c\n\x04text\x18\x01 \x01(\t\x12\x10\n\x08icon_url\x18\x02 \x01(\t\x1a\x35\n\x06\x41uthor\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0b\n\x03url\x18\x02 \x01(\t\x12\x10\n\x08icon_url\x18\x03 \x01(\t\x1a\x34\n\x05\x46ield\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t\x12\x0e\n\x06inline\x18\x03 \x01(\x08\x1a\x14\n\x05Image\x12\x0b\n\x03url\x18\x01 \x01(\t\x1a\x18\n\tThumbnail\x12\x0b\n\x03url\x18\x01 \x01(\t\x1a?\n\x04User\x12\x10\n\x08username\x18\x02 \x01(\t\x12\x15\n\rdiscriminator\x18\x03 \x01(\t\x12\x0e\n\x06\x61vatar\x18\x04 \x01(\t\x1aH\n\nUsersEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12)\n\x05value\x18\x02 \x01(\x0b\x32\x1a.chatlogs.ChatlogData.User:\x02\x38\x01\"2\n\x0b\x43reateReply\x12#\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\x15.chatlogs.ChatlogData\"!\n\x0bLoadRequest\x12\x12\n\nchannel_id\x18\x01 \x01(\t\"\x0b\n\tLoadReply2\x80\x01\n\x08\x43hatlogs\x12<\n\x06\x43reate\x12\x17.chatlogs.CreateRequest\x1a\x15.chatlogs.CreateReply\"\x00\x30\x01\x12\x36\n\x04Load\x12\x15.chatlogs.LoadRequest\x1a\x13.chatlogs.LoadReply\"\x00\x30\x01\x62\x06proto3'
+  serialized_pb=b'\n\x0e\x63hatlogs.proto\x12\x08\x63hatlogs\"\xba\x08\n\x0b\x43hatlogData\x12/\n\x08messages\x18\x01 \x03(\x0b\x32\x1d.chatlogs.ChatlogData.Message\x12/\n\x05users\x18\x02 \x03(\x0b\x32 .chatlogs.ChatlogData.UsersEntry\x1a\xbd\x06\n\x07Message\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0f\n\x07\x63ontent\x18\x02 \x01(\t\x12\x0e\n\x06pinned\x18\x03 \x01(\x08\x12\x11\n\tauthor_id\x18\x04 \x01(\t\x12=\n\x0b\x61ttachments\x18\x05 \x03(\x0b\x32(.chatlogs.ChatlogData.Message.Attachment\x12\x33\n\x06\x65mbeds\x18\x06 \x03(\x0b\x32#.chatlogs.ChatlogData.Message.Embed\x1a+\n\nAttachment\x12\x10\n\x08\x66ilename\x18\x01 \x01(\t\x12\x0b\n\x03url\x18\x02 \x01(\t\x1a\xd0\x04\n\x05\x45mbed\x12\r\n\x05title\x18\x01 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x02 \x01(\t\x12\x0b\n\x03url\x18\x03 \x01(\t\x12\x11\n\ttimestamp\x18\x04 \x01(\x04\x12\r\n\x05\x63olor\x18\x05 \x01(\r\x12:\n\x06\x66ooter\x18\x06 \x01(\x0b\x32*.chatlogs.ChatlogData.Message.Embed.Footer\x12\x38\n\x05image\x18\x07 \x01(\x0b\x32).chatlogs.ChatlogData.Message.Embed.Image\x12@\n\tthumbnail\x18\x08 \x01(\x0b\x32-.chatlogs.ChatlogData.Message.Embed.Thumbnail\x12:\n\x06\x61uthor\x18\t \x01(\x0b\x32*.chatlogs.ChatlogData.Message.Embed.Author\x12\x39\n\x06\x66ields\x18\n \x03(\x0b\x32).chatlogs.ChatlogData.Message.Embed.Field\x1a(\n\x06\x46ooter\x12\x0c\n\x04text\x18\x01 \x01(\t\x12\x10\n\x08icon_url\x18\x02 \x01(\t\x1a\x35\n\x06\x41uthor\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0b\n\x03url\x18\x02 \x01(\t\x12\x10\n\x08icon_url\x18\x03 \x01(\t\x1a\x34\n\x05\x46ield\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t\x12\x0e\n\x06inline\x18\x03 \x01(\x08\x1a\x14\n\x05Image\x12\x0b\n\x03url\x18\x01 \x01(\t\x1a\x18\n\tThumbnail\x12\x0b\n\x03url\x18\x01 \x01(\t\x1a?\n\x04User\x12\x10\n\x08username\x18\x02 \x01(\t\x12\x15\n\rdiscriminator\x18\x03 \x01(\t\x12\x0e\n\x06\x61vatar\x18\x04 \x01(\t\x1aH\n\nUsersEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12)\n\x05value\x18\x02 \x01(\x0b\x32\x1a.chatlogs.ChatlogData.User:\x02\x38\x01\"M\n\rCreateRequest\x12\x12\n\nchannel_id\x18\x01 \x01(\t\x12\x15\n\rmessage_count\x18\x02 \x01(\r\x12\x11\n\tbefore_id\x18\x03 \x01(\t\"2\n\x0b\x43reateReply\x12#\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\x15.chatlogs.ChatlogData\"]\n\x0bLoadRequest\x12\x12\n\nchannel_id\x18\x01 \x01(\t\x12#\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\x15.chatlogs.ChatlogData\x12\x15\n\rmessage_count\x18\x03 \x01(\r\"\x0b\n\tLoadReply2~\n\x08\x43hatlogs\x12:\n\x06\x43reate\x12\x17.chatlogs.CreateRequest\x1a\x15.chatlogs.CreateReply\"\x00\x12\x36\n\x04Load\x12\x15.chatlogs.LoadRequest\x1a\x13.chatlogs.LoadReply\"\x00\x30\x01\x62\x06proto3'
 )
 
 
-
-
-_CREATEREQUEST = _descriptor.Descriptor(
-  name='CreateRequest',
-  full_name='chatlogs.CreateRequest',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  create_key=_descriptor._internal_create_key,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='channel_id', full_name='chatlogs.CreateRequest.channel_id', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='message_count', full_name='chatlogs.CreateRequest.message_count', index=1,
-      number=2, type=13, cpp_type=3, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='before_id', full_name='chatlogs.CreateRequest.before_id', index=2,
-      number=3, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=28,
-  serialized_end=105,
-)
 
 
 _CHATLOGDATA_MESSAGE_ATTACHMENT = _descriptor.Descriptor(
@@ -105,8 +59,8 @@ _CHATLOGDATA_MESSAGE_ATTACHMENT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=413,
-  serialized_end=456,
+  serialized_start=334,
+  serialized_end=377,
 )
 
 _CHATLOGDATA_MESSAGE_EMBED_FOOTER = _descriptor.Descriptor(
@@ -143,8 +97,8 @@ _CHATLOGDATA_MESSAGE_EMBED_FOOTER = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=854,
-  serialized_end=894,
+  serialized_start=775,
+  serialized_end=815,
 )
 
 _CHATLOGDATA_MESSAGE_EMBED_AUTHOR = _descriptor.Descriptor(
@@ -188,8 +142,8 @@ _CHATLOGDATA_MESSAGE_EMBED_AUTHOR = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=896,
-  serialized_end=949,
+  serialized_start=817,
+  serialized_end=870,
 )
 
 _CHATLOGDATA_MESSAGE_EMBED_FIELD = _descriptor.Descriptor(
@@ -233,8 +187,8 @@ _CHATLOGDATA_MESSAGE_EMBED_FIELD = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=951,
-  serialized_end=1003,
+  serialized_start=872,
+  serialized_end=924,
 )
 
 _CHATLOGDATA_MESSAGE_EMBED_IMAGE = _descriptor.Descriptor(
@@ -264,8 +218,8 @@ _CHATLOGDATA_MESSAGE_EMBED_IMAGE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1005,
-  serialized_end=1025,
+  serialized_start=926,
+  serialized_end=946,
 )
 
 _CHATLOGDATA_MESSAGE_EMBED_THUMBNAIL = _descriptor.Descriptor(
@@ -295,8 +249,8 @@ _CHATLOGDATA_MESSAGE_EMBED_THUMBNAIL = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1027,
-  serialized_end=1051,
+  serialized_start=948,
+  serialized_end=972,
 )
 
 _CHATLOGDATA_MESSAGE_EMBED = _descriptor.Descriptor(
@@ -389,8 +343,8 @@ _CHATLOGDATA_MESSAGE_EMBED = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=459,
-  serialized_end=1051,
+  serialized_start=380,
+  serialized_end=972,
 )
 
 _CHATLOGDATA_MESSAGE = _descriptor.Descriptor(
@@ -455,8 +409,8 @@ _CHATLOGDATA_MESSAGE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=222,
-  serialized_end=1051,
+  serialized_start=143,
+  serialized_end=972,
 )
 
 _CHATLOGDATA_USER = _descriptor.Descriptor(
@@ -500,8 +454,8 @@ _CHATLOGDATA_USER = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1053,
-  serialized_end=1116,
+  serialized_start=974,
+  serialized_end=1037,
 )
 
 _CHATLOGDATA_USERSENTRY = _descriptor.Descriptor(
@@ -538,8 +492,8 @@ _CHATLOGDATA_USERSENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1118,
-  serialized_end=1190,
+  serialized_start=1039,
+  serialized_end=1111,
 )
 
 _CHATLOGDATA = _descriptor.Descriptor(
@@ -576,7 +530,53 @@ _CHATLOGDATA = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=108,
+  serialized_start=29,
+  serialized_end=1111,
+)
+
+
+_CREATEREQUEST = _descriptor.Descriptor(
+  name='CreateRequest',
+  full_name='chatlogs.CreateRequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='channel_id', full_name='chatlogs.CreateRequest.channel_id', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='message_count', full_name='chatlogs.CreateRequest.message_count', index=1,
+      number=2, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='before_id', full_name='chatlogs.CreateRequest.before_id', index=2,
+      number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1113,
   serialized_end=1190,
 )
 
@@ -628,6 +628,20 @@ _LOADREQUEST = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='data', full_name='chatlogs.LoadRequest.data', index=1,
+      number=2, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='message_count', full_name='chatlogs.LoadRequest.message_count', index=2,
+      number=3, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -641,7 +655,7 @@ _LOADREQUEST = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=1244,
-  serialized_end=1277,
+  serialized_end=1337,
 )
 
 
@@ -665,8 +679,8 @@ _LOADREPLY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1279,
-  serialized_end=1290,
+  serialized_start=1339,
+  serialized_end=1350,
 )
 
 _CHATLOGDATA_MESSAGE_ATTACHMENT.containing_type = _CHATLOGDATA_MESSAGE
@@ -690,19 +704,13 @@ _CHATLOGDATA_USERSENTRY.containing_type = _CHATLOGDATA
 _CHATLOGDATA.fields_by_name['messages'].message_type = _CHATLOGDATA_MESSAGE
 _CHATLOGDATA.fields_by_name['users'].message_type = _CHATLOGDATA_USERSENTRY
 _CREATEREPLY.fields_by_name['data'].message_type = _CHATLOGDATA
-DESCRIPTOR.message_types_by_name['CreateRequest'] = _CREATEREQUEST
+_LOADREQUEST.fields_by_name['data'].message_type = _CHATLOGDATA
 DESCRIPTOR.message_types_by_name['ChatlogData'] = _CHATLOGDATA
+DESCRIPTOR.message_types_by_name['CreateRequest'] = _CREATEREQUEST
 DESCRIPTOR.message_types_by_name['CreateReply'] = _CREATEREPLY
 DESCRIPTOR.message_types_by_name['LoadRequest'] = _LOADREQUEST
 DESCRIPTOR.message_types_by_name['LoadReply'] = _LOADREPLY
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
-
-CreateRequest = _reflection.GeneratedProtocolMessageType('CreateRequest', (_message.Message,), {
-  'DESCRIPTOR' : _CREATEREQUEST,
-  '__module__' : 'chatlogs_pb2'
-  # @@protoc_insertion_point(class_scope:chatlogs.CreateRequest)
-  })
-_sym_db.RegisterMessage(CreateRequest)
 
 ChatlogData = _reflection.GeneratedProtocolMessageType('ChatlogData', (_message.Message,), {
 
@@ -791,6 +799,13 @@ _sym_db.RegisterMessage(ChatlogData.Message.Embed.Thumbnail)
 _sym_db.RegisterMessage(ChatlogData.User)
 _sym_db.RegisterMessage(ChatlogData.UsersEntry)
 
+CreateRequest = _reflection.GeneratedProtocolMessageType('CreateRequest', (_message.Message,), {
+  'DESCRIPTOR' : _CREATEREQUEST,
+  '__module__' : 'chatlogs_pb2'
+  # @@protoc_insertion_point(class_scope:chatlogs.CreateRequest)
+  })
+_sym_db.RegisterMessage(CreateRequest)
+
 CreateReply = _reflection.GeneratedProtocolMessageType('CreateReply', (_message.Message,), {
   'DESCRIPTOR' : _CREATEREPLY,
   '__module__' : 'chatlogs_pb2'
@@ -822,8 +837,8 @@ _CHATLOGS = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=1293,
-  serialized_end=1421,
+  serialized_start=1352,
+  serialized_end=1478,
   methods=[
   _descriptor.MethodDescriptor(
     name='Create',

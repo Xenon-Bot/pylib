@@ -14,7 +14,7 @@ class ChatlogsStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.Create = channel.unary_stream(
+        self.Create = channel.unary_unary(
                 '/chatlogs.Chatlogs/Create',
                 request_serializer=chatlogs__pb2.CreateRequest.SerializeToString,
                 response_deserializer=chatlogs__pb2.CreateReply.FromString,
@@ -44,7 +44,7 @@ class ChatlogsServicer(object):
 
 def add_ChatlogsServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'Create': grpc.unary_stream_rpc_method_handler(
+            'Create': grpc.unary_unary_rpc_method_handler(
                     servicer.Create,
                     request_deserializer=chatlogs__pb2.CreateRequest.FromString,
                     response_serializer=chatlogs__pb2.CreateReply.SerializeToString,
@@ -75,7 +75,7 @@ class Chatlogs(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_stream(request, target, '/chatlogs.Chatlogs/Create',
+        return grpc.experimental.unary_unary(request, target, '/chatlogs.Chatlogs/Create',
             chatlogs__pb2.CreateRequest.SerializeToString,
             chatlogs__pb2.CreateReply.FromString,
             options, channel_credentials,
