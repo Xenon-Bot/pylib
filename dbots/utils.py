@@ -141,7 +141,7 @@ def string_to_timedelta(string):
         part = parts[i]
         if re.match(r"^[0-9]+$", part):
             try:
-                count = int(part)
+                count = max(int(part), 0)
                 unit = parts[i + 1]
                 mp = get_multiplier(unit)
                 seconds += count * mp
