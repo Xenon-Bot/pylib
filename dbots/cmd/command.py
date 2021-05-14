@@ -103,7 +103,7 @@ class Command:
         self.checks = kwargs.get("checks", [])
         self.guild_id = kwargs.get("guild_id")
         self.register = kwargs.get("register", True)
-        self.ephemeral = kwargs.get("ephemeral", False)
+        self.ephemeral = kwargs.get("ephemeral", True)
 
     @property
     def full_name(self):
@@ -196,7 +196,7 @@ class SubCommand:
 
         self.parent = kwargs.get("parent")
         self.checks = kwargs.get("checks", [])
-        self.ephemeral = kwargs.get("ephemeral", False)
+        self.ephemeral = kwargs.get("ephemeral", True)
 
     @property
     def full_name(self):
@@ -225,7 +225,7 @@ class SubCommandGroup:
 
         self.parent = kwargs.get("parent")
         self.checks = kwargs.get("checks", [])
-        self.ephemeral = kwargs.get("ephemeral", False)
+        self.ephemeral = kwargs.get("ephemeral", True)
 
     @property
     def full_name(self):
