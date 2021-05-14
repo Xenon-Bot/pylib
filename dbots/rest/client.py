@@ -453,11 +453,12 @@ class RouteMixin:
             converter=Webhook
         )
 
-    def create_webhook_message(self, webhook, wait=False, **options):
+    def create_webhook_message(self, webhook, wait=False, files=None, **options):
         return self.request(
             Route("POST", "/webhooks/{webhook_id}/{webhook_token}",
                   webhook_id=webhook.id, webhook_token=webhook.token),
             json=make_json(options),
+            files=files,
             params={"wait": "true" if wait else "false"},
             converter=Message if wait else None
         )
@@ -690,21 +691,22 @@ class HTTPClient(RouteMixin):
 
             self._session = aiohttp.ClientSession(loop=self.loop, connector=connector)
 
-        if files is not None:
-            data = kwargs.get("data", aiohttp.FormData())
-            if "json" in kwargs:
-                data.add_field("payload_json", orjson.dumps(kwargs.pop("json")).decode("utf-8"))
-
-            for file in files:
-                data.add_field('file', file.fp, filename=file.filename, content_type='application/octet-stream')
-
-            kwargs["data"] = data
-
         for i in range(self.max_retries):
+            options = kwargs.copy()
+
             try:
                 if files is not None:
                     for file in files:
                         file.reset()
+
+                    data = options.get("data", aiohttp.FormData())
+                    if "json" in options:
+                        data.add_field("payload_json", orjson.dumps(options.pop("json")).decode("utf-8"))
+
+                    for file in files:
+                        data.add_field('file', file.fp, filename=file.filename, content_type='application/octet-stream')
+
+                    options["data"] = data
 
                 ratelimit = await self.get_bucket(route.bucket)
                 if ratelimit:
@@ -716,7 +718,7 @@ class HTTPClient(RouteMixin):
 
                 await self.semaphore.acquire()
                 try:
-                    result = await self._perform_request(route, **kwargs)
+                    result = await self._perform_request(route, **options)
                 finally:
                     self.semaphore.release()
 
@@ -737,10 +739,13 @@ class HTTPClient(RouteMixin):
                 elif e.status == 404:
                     raise HTTPNotFound(e.text)
 
-                elif e.status == 429 and not wait:
-                    raise HTTPTooManyRequests(e.text)
+                elif e.status == 429:
+                    if not wait:
+                        raise HTTPTooManyRequests(e.text)
+                    else:
+                        await asyncio.sleep(i)
 
-                elif i == self.max_retries - 1:
+                elif e.status < 500 or i == self.max_retries - 1:
                     raise e
 
                 else:
