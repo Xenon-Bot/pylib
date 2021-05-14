@@ -32,7 +32,7 @@ class ChatlogsBase(abc.ABC):
             ),
             '/chatlogs.Chatlogs/Load': grpclib.const.Handler(
                 self.Load,
-                grpclib.const.Cardinality.UNARY_STREAM,
+                grpclib.const.Cardinality.UNARY_UNARY,
                 chatlogs_pb2.LoadRequest,
                 chatlogs_pb2.LoadReply,
             ),
@@ -48,7 +48,7 @@ class ChatlogsStub:
             chatlogs_pb2.CreateRequest,
             chatlogs_pb2.CreateReply,
         )
-        self.Load = grpclib.client.UnaryStreamMethod(
+        self.Load = grpclib.client.UnaryUnaryMethod(
             channel,
             '/chatlogs.Chatlogs/Load',
             chatlogs_pb2.LoadRequest,

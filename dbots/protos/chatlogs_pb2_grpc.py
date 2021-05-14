@@ -19,7 +19,7 @@ class ChatlogsStub(object):
                 request_serializer=chatlogs__pb2.CreateRequest.SerializeToString,
                 response_deserializer=chatlogs__pb2.CreateReply.FromString,
                 )
-        self.Load = channel.unary_stream(
+        self.Load = channel.unary_unary(
                 '/chatlogs.Chatlogs/Load',
                 request_serializer=chatlogs__pb2.LoadRequest.SerializeToString,
                 response_deserializer=chatlogs__pb2.LoadReply.FromString,
@@ -49,7 +49,7 @@ def add_ChatlogsServicer_to_server(servicer, server):
                     request_deserializer=chatlogs__pb2.CreateRequest.FromString,
                     response_serializer=chatlogs__pb2.CreateReply.SerializeToString,
             ),
-            'Load': grpc.unary_stream_rpc_method_handler(
+            'Load': grpc.unary_unary_rpc_method_handler(
                     servicer.Load,
                     request_deserializer=chatlogs__pb2.LoadRequest.FromString,
                     response_serializer=chatlogs__pb2.LoadReply.SerializeToString,
@@ -92,7 +92,7 @@ class Chatlogs(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_stream(request, target, '/chatlogs.Chatlogs/Load',
+        return grpc.experimental.unary_unary(request, target, '/chatlogs.Chatlogs/Load',
             chatlogs__pb2.LoadRequest.SerializeToString,
             chatlogs__pb2.LoadReply.FromString,
             options, channel_credentials,

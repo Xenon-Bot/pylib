@@ -8,46 +8,13 @@ message ChatlogData {
       string filename = 1;
       string url = 2;
     }
-    message Embed {
-      message Footer {
-        string text = 1;
-        string icon_url = 2;
-      }
-      message Author {
-        string name = 1;
-        string url = 2;
-        string icon_url = 3;
-      }
-      message Field {
-        string name = 1;
-        string value = 2;
-        bool inline = 3;
-      }
-      message Image {
-        string url = 1;
-      }
-      message Thumbnail {
-        string url = 1;
-      }
-
-      string title = 1;
-      string description = 2;
-      string url = 3;
-      uint64 timestamp = 4;
-      uint32 color = 5;
-      Footer footer = 6;
-      Image image = 7;
-      Thumbnail thumbnail = 8;
-      Author author = 9;
-      repeated Field fields = 10;
-    }
 
     string id = 1;
     string content = 2;
     bool pinned = 3;
     string author_id = 4;
     repeated Attachment attachments = 5;
-    repeated Embed embeds = 6;
+    repeated bytes embeds = 6;
   }
   message User {
     string username = 2;
@@ -79,5 +46,5 @@ message LoadReply {}
 
 service Chatlogs {
   rpc Create(CreateRequest) returns (CreateReply) {}
-  rpc Load(LoadRequest) returns (stream LoadReply) {}
+  rpc Load(LoadRequest) returns (LoadReply) {}
 }
