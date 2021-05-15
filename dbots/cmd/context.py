@@ -38,7 +38,7 @@ class CommandContext:
             self._future.set_result(resp)
             self.state = ContextState.REPLIED
         elif self.state == ContextState.DEFERRED:
-            result = await self.edit_response(*args, message_id="@original", **kwargs)
+            result = await self.edit_response(*args, message_id="@original", failover=False, **kwargs)
             self.state = ContextState.REPLIED
             return result
         else:
@@ -59,14 +59,20 @@ class CommandContext:
     async def get_response(self, message_id="@original"):
         return await self.bot.http.get_interaction_response(self.token, message_id)
 
-    async def edit_response(self, *args, message_id="@original", **kwargs):
+    async def edit_response(self, *args, message_id="@original", failover=True, **kwargs):
         resp = InteractionResponse.message(*args, **kwargs)
-        return await self.bot.http.edit_interaction_response(
-            self.token,
-            message_id,
-            files=resp.files if len(resp.files) > 0 else None,
-            **resp.data
-        )
+        try:
+            return await self.bot.http.edit_interaction_response(
+                self.token,
+                message_id,
+                files=resp.files if len(resp.files) > 0 else None,
+                **resp.data
+            )
+        except HTTPNotFound:
+            if failover:
+                return await self.respond(*args, **kwargs)
+            else:
+                raise
 
     async def delete_response(self, message_id="@original"):
         return await self.bot.http.delete_interaction_response(self.token, message_id)
@@ -150,18 +156,24 @@ class ButtonContext:
             self.state = ContextState.REPLIED
             return result
 
-    async def edit_response(self, *args, message_id="@original", **kwargs):
+    async def edit_response(self, *args, message_id="@original", failover=True, **kwargs):
         resp = InteractionResponse.message_update(*args, **kwargs)
         if message_id == "@original" and self.state == ContextState.NOT_REPLIED:
             self.state = ContextState.REPLIED
             self._future.set_result(resp)
         else:
-            return await self.bot.http.edit_interaction_response(
-                self.token,
-                message_id,
-                files=resp.files if len(resp.files) > 0 else None,
-                **resp.data
-            )
+            try:
+                return await self.bot.http.edit_interaction_response(
+                    self.token,
+                    message_id,
+                    files=resp.files if len(resp.files) > 0 else None,
+                    **resp.data
+                )
+            except HTTPNotFound:
+                if failover:
+                    return await self.respond(*args, **kwargs)
+                else:
+                    raise
 
     def update(self, *args, **kwargs):
         return self.edit_response(*args, message_id="@original", **kwargs)
