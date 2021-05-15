@@ -36,7 +36,6 @@ class InteractionResponse:
 
         elif len(components) != 0:
             if not isinstance(components[0], ActionRow):
-                print("yeet")
                 components = [ActionRow(*components)]
 
             elif not isinstance(components[0], Component):
