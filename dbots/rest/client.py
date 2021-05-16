@@ -195,7 +195,7 @@ class RouteMixin:
         }
         json = make_json(options, allowed_keys, converters)
         return self.request(
-            Route("GET", "/guilds/{guild_id}/members/{user_id}",
+            Route("PATCH", "/guilds/{guild_id}/members/{user_id}",
                   guild_id=entity_or_id(guild), user_id=entity_or_id(user)),
             json=json
         )
