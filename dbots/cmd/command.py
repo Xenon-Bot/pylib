@@ -72,8 +72,12 @@ def inspect_options(_callable, extends=None):
 
 def make_command(klass, cb, **kwargs):
     checks = []
+    cooldown = None
     while isinstance(cb, Check):
         checks.append(cb)
+        if isinstance(cb, Cooldown):
+            cooldown = cb
+
         cb = cb.next
 
     doc_lines = inspect.cleandoc(inspect.getdoc(cb)).splitlines()
@@ -83,11 +87,17 @@ def make_command(klass, cb, **kwargs):
         "description": doc_lines[0],
         "long_description": "\n".join(doc_lines),
         "options": inspect_options(cb, extends=kwargs.get("extends")),
-        "checks": checks
+        "checks": checks,
+        "cooldown": cooldown
     }
 
     values.update(kwargs)
-    return klass(**values)
+    command = klass(**values)
+
+    if cooldown is not None:
+        cooldown.command = command
+
+    return command
 
 
 class Command:
@@ -101,6 +111,7 @@ class Command:
 
         self.visible = kwargs.get("visible", True)
         self.checks = kwargs.get("checks", [])
+        self.cooldown = kwargs.get("cooldown")
         self.guild_id = kwargs.get("guild_id")
         self.register = kwargs.get("register", True)
         self.ephemeral = kwargs.get("ephemeral", True)
@@ -196,6 +207,7 @@ class SubCommand:
 
         self.parent = kwargs.get("parent")
         self.checks = kwargs.get("checks", [])
+        self.cooldown = kwargs.get("cooldown")
         self.ephemeral = kwargs.get("ephemeral", True)
 
     @property
@@ -225,6 +237,7 @@ class SubCommandGroup:
 
         self.parent = kwargs.get("parent")
         self.checks = kwargs.get("checks", [])
+        self.cooldown = kwargs.get("cooldown")
         self.ephemeral = kwargs.get("ephemeral", True)
 
     @property

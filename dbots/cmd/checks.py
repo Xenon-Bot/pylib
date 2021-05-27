@@ -14,7 +14,8 @@ __all__ = (
     "not_in_maintenance",
     "guild_only",
     "dm_only",
-    "cooldown"
+    "cooldown",
+    "Cooldown"
 )
 
 
@@ -166,42 +167,59 @@ class CooldownType(IntEnum):
     AUTHOR = 3
 
 
-def cooldown(rate: int, per: int, bucket=CooldownType.AUTHOR, manual=False):
-    def get_key(ctx):
-        if bucket == CooldownType.GUILD:
+class Cooldown(Check):
+    def __init__(self, rate: int, per: int, bucket=CooldownType.AUTHOR, manual=False, next=None):
+        super().__init__(self._check)
+        self.rate = rate
+        self.per = per
+        self.bucket = bucket
+        self.manual = manual
+
+        self.command = None
+
+    def get_key(self, ctx):
+        if self.bucket == CooldownType.GUILD:
             if ctx.guild_id is not None:
                 key = ctx.guild_id
 
             else:
                 key = ctx.channel_id
 
-        elif bucket == CooldownType.CHANNEL:
+        elif self.bucket == CooldownType.CHANNEL:
             key = ctx.channel_id
 
-        elif bucket == CooldownType.AUTHOR:
+        elif self.bucket == CooldownType.AUTHOR:
             key = ctx.author.id
 
         else:
             key = "*"
 
-        return "cmd:cooldown:" + ctx.command.full_name.replace(" ", "") + ":" + key
+        return "cmd:cooldown:" + self.command.full_name.replace(" ", "") + ":" + key
 
-    @Check
-    async def _check(ctx, **_):
-        key = get_key(ctx)
+    async def set(self, ctx, value: int):
+        key = self.get_key(ctx)
+        await ctx.bot.redis.setex(key, self.per, value)
+
+    async def uncount(self, ctx):
+        key = self.get_key(ctx)
+        current = int(await ctx.bot.redis.get(key) or 0)
+        if current != 0:
+            await ctx.bot.redis.setex(key, self.per, current - 1)
+
+    async def count(self, ctx):
+        key = self.get_key(ctx)
+        current = int(await ctx.bot.redis.get(key) or 0)
+        await ctx.bot.redis.setex(key, self.per, current + 1)
+
+    async def reset(self, ctx):
+        key = self.get_key(ctx)
+        await ctx.bot.redis.delete(key)
+
+    async def _check(self, ctx, **_):
+        key = self.get_key(ctx)
         current = int(await ctx.bot.redis.get(key) or 0)
 
-        async def reset(*_):
-            key = get_key(ctx)
-            await ctx.bot.redis.delete(key)
-
-        async def count(*_):
-            await ctx.bot.redis.setex(key, per, current + 1)
-
-        ctx.reset_cooldown = reset
-        ctx.count_cooldown = count
-
-        if current >= rate:
+        if current >= self.rate:
             remaining = await ctx.bot.redis.ttl(key)
             await ctx.respond(**create_message(
                 f"This **command** is currently on **cooldown**.\n"
@@ -210,12 +228,14 @@ def cooldown(rate: int, per: int, bucket=CooldownType.AUTHOR, manual=False):
             ), ephemeral=True)
             return False
 
-        if not manual:
-            await count()
+        if not self.manual:
+            await self.count(ctx)
 
         return True
 
-    return _check
+
+def cooldown(rate: int, per: int, bucket=CooldownType.AUTHOR, manual=False):
+    return Cooldown(rate=rate, per=per, bucket=bucket, manual=manual)
 
 
 @Check

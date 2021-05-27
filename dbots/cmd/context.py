@@ -80,6 +80,16 @@ class CommandContext:
     async def wait(self):
         return await self._future
 
+    def count_cooldown(self):
+        return self.command.cooldown.count(self)
+
+    def reset_cooldown(self):
+        return self.command.cooldown.reset(self)
+
+    def uncount_cooldown(self):
+        return self.command.cooldown.uncount(self)
+
+
     async def fetch_channel(self):
         if "channel" in self._http_cache:
             return self._http_cache["channel"]
