@@ -596,6 +596,19 @@ class RouteMixin:
             converter=Message
         )
 
+    def set_command_guild_permissions(self, guild, command, permissions):
+        return self.request(
+            Route("PUT", "/applications/{application_id}/guilds/{guild_id}/commands/{command_id}/permissions",
+                  application_id=self.application_id, guild_id=entity_or_id(guild), command_id=entity_or_id(command)),
+            json={"permissions": permissions}
+        )
+
+    def get_command_guild_permissions(self, guild, command):
+        return self.request(
+            Route("GET", "/applications/{application_id}/guilds/{guild_id}/commands/{command_id}/permissions",
+                  application_id=self.application_id, guild_id=entity_or_id(guild), command_id=entity_or_id(command))
+        )
+
 
 class HTTPClient(RouteMixin):
     def __init__(self, token, redis, **kwargs):
