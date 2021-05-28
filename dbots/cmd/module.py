@@ -14,7 +14,7 @@ class Module:
 
         self.commands = []
         self.tasks = []
-        self.buttons = []
+        self.components = []
         for name in dir(self):
             attr = getattr(self, name)
             if isinstance(attr, Command):
@@ -25,9 +25,9 @@ class Module:
                 attr.bind(self)
                 self.tasks.append(attr)
 
-            elif isinstance(attr, PartialButton):
+            elif isinstance(attr, PartialComponent):
                 attr.bind(self)
-                self.buttons.append(attr)
+                self.components.append(attr)
 
     @staticmethod
     def command(_callable=None, **kwargs):
@@ -40,17 +40,17 @@ class Module:
         return make_command(Command, _callable, **kwargs)
 
     @staticmethod
-    def button(_callable=None, **kwargs):
+    def component(_callable=None, **kwargs):
         if _callable is None:
             def _predicate(_callable):
-                return PartialButton(
+                return PartialComponent(
                     name=kwargs.get("name", _callable.__name__),
                     callable=_callable
                 )
 
             return _predicate
 
-        return PartialButton(
+        return PartialComponent(
             name=kwargs.get("name", _callable.__name__),
             callable=_callable
         )

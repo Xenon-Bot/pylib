@@ -79,3 +79,6 @@ class ComponentInteractionData:
     def __init__(self, data):
         self.custom_id = data["custom_id"]
         self.component_type = ComponentType(data["component_type"])
+
+        if self.component_type == ComponentType.SELECT_MENU:
+            self.values = data["values"]

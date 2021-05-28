@@ -29,7 +29,7 @@ class InteractionBot:
     def __init__(self, **kwargs):
         self.commands = []
         self.tasks = []
-        self.buttons = []
+        self.components = []
         self.public_key = VerifyKey(bytes.fromhex(kwargs["public_key"]))
         self.token = kwargs["token"]
         self._loop = kwargs.get("loop")
@@ -87,24 +87,24 @@ class InteractionBot:
 
         return make_command(Command, _callable, **kwargs)
 
-    def button(self, _callable=None, **kwargs):
+    def component(self, _callable=None, **kwargs):
         if _callable is None:
             def _predicate(_callable):
-                button = PartialButton(
+                component = PartialComponent(
                     name=kwargs.get("name", _callable.__name__),
                     callable=_callable
                 )
-                self.buttons.append(button)
-                return button
+                self.components.append(component)
+                return component
 
             return _predicate
 
-        button = PartialButton(
+        component = PartialComponent(
             name=kwargs.get("name", _callable.__name__),
             callable=_callable
         )
-        self.buttons.append(button)
-        return button
+        self.components.append(component)
+        return component
 
     def task(self, **td):
         def _predicate(_callable):
@@ -178,8 +178,8 @@ class InteractionBot:
         for t in module.tasks:
             self.tasks.append(t)
 
-        for b in module.buttons:
-            self.buttons.append(b)
+        for c in module.components:
+            self.components.append(c)
 
     async def on_command_error(self, ctx, e):
         if isinstance(e, asyncio.CancelledError):
@@ -220,11 +220,11 @@ class InteractionBot:
         except Exception as e:
             return await self.on_command_error(ctx, e)
 
-    async def execute_button(self, button, payload, args):
-        ctx = ButtonContext(self, button, payload)
+    async def execute_component(self, component, payload, args):
+        ctx = ComponentContext(self, component, payload)
 
         async def _executor():
-            result = button.callable(ctx, *args)
+            result = component.callable(ctx, *args)
             if inspect.isawaitable(result):
                 await result
 
@@ -252,9 +252,9 @@ class InteractionBot:
             else:
                 args = parts[1].split("&")
 
-            for button in self.buttons:
-                if button.name == name:
-                    resp = await self.execute_button(button, payload, args)
+            for component in self.components:
+                if component.name == name:
+                    resp = await self.execute_component(component, payload, args)
                     return resp
 
             return InteractionResponse.message(

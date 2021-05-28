@@ -8,7 +8,7 @@ from ..rest import *
 __all__ = (
     "CommandContext",
     "ContextState",
-    "ButtonContext"
+    "ComponentContext"
 )
 
 
@@ -135,10 +135,10 @@ class CommandContext:
         return getattr(self.payload, item)
 
 
-class ButtonContext:
-    def __init__(self, bot, button, payload):
+class ComponentContext:
+    def __init__(self, bot, component, payload):
         self.bot = bot
-        self.button = button
+        self.component = component
         self.payload = payload
         self._http_cache = {}
 

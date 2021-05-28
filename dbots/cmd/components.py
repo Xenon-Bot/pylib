@@ -9,18 +9,22 @@ __all__ = (
     "ActionRow",
     "ButtonStyle",
     "Button",
-    "PartialButton"
+    "SelectMenu",
+    "SelectMenuOption",
+    "PartialComponent",
 )
 
 
 class ComponentType(IntEnum):
     ACTION_ROW = 1
     BUTTON = 2
+    SELECT_MENU = 3
 
 
 class Component:
     def __init__(self, **kwargs):
         self.type = ComponentType(kwargs["type"])
+        self.custom_id = kwargs.get("custom_id", uuid4().hex)
 
     def to_payload(self):
         return {
@@ -49,9 +53,8 @@ class ButtonStyle(IntEnum):
 
 class Button(Component):
     def __init__(self, **kwargs):
-        super().__init__(type=ComponentType.BUTTON)
+        super().__init__(type=ComponentType.BUTTON, **kwargs)
         self.label = kwargs["label"]
-        self.custom_id = kwargs.get("custom_id", uuid4().hex)
         args = kwargs.get("args", [])
         if len(args) != 0:
             self.custom_id = f"{self.custom_id}?{'&'.join(args)}"
@@ -64,8 +67,8 @@ class Button(Component):
     def to_payload(self):
         return {
             "type": self.type.value,
-            "label": self.label,
             "custom_id": self.custom_id,
+            "label": self.label,
             "style": self.style.value,
             "url": self.url,
             "emoji": self.emoji,
@@ -73,7 +76,44 @@ class Button(Component):
         }
 
 
-class PartialButton:
+class SelectMenu(Component):
+    def __init__(self, **kwargs):
+        super().__init__(type=ComponentType.SELECT_MENU, **kwargs)
+        self.options = []
+        self.placeholder = kwargs.get("placeholder")
+        self.min_values = kwargs.get("min_values", 1)
+        self.max_values = kwargs.get("max_values", 1)
+
+    def to_payload(self):
+        return {
+            "type": self.type.value,
+            "custom_id": self.custom_id,
+            "placeholder": self.placeholder,
+            "min_values": self.min_values,
+            "max_values": self.max_values,
+            "options": [o.to_payload() for o in self.options]
+        }
+
+
+class SelectMenuOption:
+    def __init__(self, **kwargs):
+        self.label = kwargs["label"]
+        self.value = kwargs["value"]
+        self.description = kwargs.get("description")
+        self.emoji = kwargs.get("emoji")
+        self.default = kwargs.get("default", False)
+
+    def to_payload(self):
+        return {
+            "label": self.label,
+            "value": self.value,
+            "description": self.description,
+            "emoji": self.emoji,
+            "default": self.default
+        }
+
+
+class PartialComponent:
     def __init__(self, **kwargs):
         self.name = kwargs["name"]
         self.callable = kwargs["callable"]
