@@ -9,11 +9,12 @@ __all__ = (
 
 
 class FormatValue:
-    def __init__(self, title=None, color=None, emoji=None, footer=""):
+    def __init__(self, title=None, color=None, emoji=None, footer="", components=[]):
         self.title = title
         self.color = color
         self.emoji = emoji
         self.footer = footer
+        self.components = components
 
 
 class Format:
@@ -57,7 +58,8 @@ def create_message(text, f=Format.DEFAULT, title=None, embed=True):
                 },
                 "color": f.color,
                 "description": f"{text}\n\n{f.footer}"
-            }]
+            }],
+            "components": f.components
         }
 
     else:
