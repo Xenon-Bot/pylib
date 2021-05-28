@@ -77,9 +77,9 @@ class Button(Component):
 
 
 class SelectMenu(Component):
-    def __init__(self, **kwargs):
+    def __init__(self, *options, **kwargs):
         super().__init__(type=ComponentType.SELECT_MENU, **kwargs)
-        self.options = []
+        self.options = options
         self.placeholder = kwargs.get("placeholder")
         self.min_values = kwargs.get("min_values", 1)
         self.max_values = kwargs.get("max_values", 1)
