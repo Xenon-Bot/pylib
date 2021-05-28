@@ -25,6 +25,9 @@ class Component:
     def __init__(self, **kwargs):
         self.type = ComponentType(kwargs["type"])
         self.custom_id = kwargs.get("custom_id", uuid4().hex)
+        args = kwargs.get("args", [])
+        if len(args) != 0:
+            self.custom_id = f"{self.custom_id}?{'&'.join(args)}"
 
     def to_payload(self):
         return {
@@ -49,28 +52,30 @@ class ButtonStyle(IntEnum):
     SECONDARY = 2
     SUCCESS = 3
     DANGER = 4
+    LINK = 5
 
 
 class Button(Component):
     def __init__(self, **kwargs):
         super().__init__(type=ComponentType.BUTTON, **kwargs)
         self.label = kwargs["label"]
-        args = kwargs.get("args", [])
-        if len(args) != 0:
-            self.custom_id = f"{self.custom_id}?{'&'.join(args)}"
-
-        self.style = ButtonStyle(kwargs.get("style", ButtonStyle.PRIMARY))
         self.url = kwargs.get("url")
-        self.emoji = kwargs.get("emoji")
         self.disabled = kwargs.get("disabled", False)
+
+        default_style = ButtonStyle.LINK if "url" in kwargs else ButtonStyle.PRIMARY
+        self.style = ButtonStyle(kwargs.get("style", default_style))
+
+        self.emoji = kwargs.get("emoji")
+        if type(self.emoji) == str:
+            self.emoji = {"name": self.emoji}
 
     def to_payload(self):
         return {
             "type": self.type.value,
-            "custom_id": self.custom_id,
+            "custom_id": self.custom_id if self.style != ButtonStyle.LINK else None,
             "label": self.label,
             "style": self.style.value,
-            "url": self.url,
+            "url": self.url if self.style == ButtonStyle.LINK else None,
             "emoji": self.emoji,
             "disabled": self.disabled
         }
@@ -100,7 +105,11 @@ class SelectMenuOption:
         self.label = kwargs["label"]
         self.value = kwargs["value"]
         self.description = kwargs.get("description")
+
         self.emoji = kwargs.get("emoji")
+        if type(self.emoji) == str:
+            self.emoji = {"name": self.emoji}
+
         self.default = kwargs.get("default", False)
 
     def to_payload(self):
