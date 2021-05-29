@@ -50,7 +50,7 @@ def create_message(text, f=Format.DEFAULT, title=None, embed=True):
     if embed:
         match = re.match(r"<(a?):\w+:([0-9]+)>", f.emoji)
         emoji_format = "png" if not match[1] else "gif"
-        return {
+        data = {
             "embeds": [{
                 "author": {
                     "name": title or f.title,
@@ -58,11 +58,15 @@ def create_message(text, f=Format.DEFAULT, title=None, embed=True):
                 },
                 "color": f.color,
                 "description": f"{text}\n\n{f.footer}"
-            }],
-            "components": f.components
+            }]
         }
 
     else:
-        return {
+        data = {
             "content": f"{f.emoji} **{title or f.title}**\n\n{text}\n\n{f.footer}"
         }
+
+    if f.components:
+        data["components"] = f.components
+
+    return data
