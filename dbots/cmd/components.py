@@ -58,7 +58,7 @@ class ButtonStyle(IntEnum):
 class Button(Component):
     def __init__(self, **kwargs):
         super().__init__(type=ComponentType.BUTTON, **kwargs)
-        self.label = kwargs["label"]
+        self.label = kwargs.get("label")
         self.url = kwargs.get("url")
         self.disabled = kwargs.get("disabled", False)
 
