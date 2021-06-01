@@ -372,11 +372,17 @@ class RouteMixin:
             converter=Message
         )
 
-    def pin_message(self):
-        pass
+    def pin_message(self, channel, message):
+        return self.request(
+            Route("PUT", "/channels/{channel_id}/pins/{message_id}",
+                  channel_id=entity_or_id(channel), message_id=entity_or_id(message))
+        )
 
-    def unpin_message(self):
-        pass
+    def unpin_message(self, channel, message):
+        return self.request(
+            Route("DELETE", "/channels/{channel_id}/pins/{message_id}",
+                  channel_id=entity_or_id(channel), message_id=entity_or_id(message))
+        )
 
     def delete_message(self):
         pass
