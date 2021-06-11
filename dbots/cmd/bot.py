@@ -187,7 +187,6 @@ class InteractionBot:
 
         tb = "".join(traceback.format_exception(type(e), e, e.__traceback__))
         print("Command Error:\n", tb, file=sys.stderr)
-        await ctx.defer()
 
     async def execute_command(self, command, payload, remaining_options):
         ctx = self.ctx_klass(self, command, payload, args=remaining_options)
