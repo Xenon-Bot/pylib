@@ -153,6 +153,10 @@ class ComponentContext:
     def values(self):
         return self.payload.data.values
 
+    @property
+    def resolved(self):
+        return self.payload.data.resolved
+
     async def respond(self, *args, **kwargs):
         resp = InteractionResponse.message(*args, **kwargs)
         if self.state == ContextState.NOT_REPLIED and len(resp.files) != 0:
