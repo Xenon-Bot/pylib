@@ -29,6 +29,10 @@ class CommandContext:
         self.state = ContextState.NOT_REPLIED
         self._future = bot.loop.create_future()
 
+    @property
+    def resolved(self):
+        return self.payload.data.resolved
+
     async def respond(self, *args, **kwargs):
         resp = InteractionResponse.message(*args, **kwargs)
         if self.state == ContextState.NOT_REPLIED and len(resp.files) != 0:
@@ -152,10 +156,6 @@ class ComponentContext:
     @property
     def values(self):
         return self.payload.data.values
-
-    @property
-    def resolved(self):
-        return self.payload.data.resolved
 
     async def respond(self, *args, **kwargs):
         resp = InteractionResponse.message(*args, **kwargs)
