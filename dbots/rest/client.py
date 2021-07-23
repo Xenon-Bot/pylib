@@ -487,6 +487,18 @@ class RouteMixin:
             Route("GET", "/oauth2/applications/@me")
         )
 
+    def exchange_oauth_token(self, client_id, client_secret, redirect_uri, code):
+        return self.request(
+            Route("POST", "/oauth2/token"),
+            data=make_json({
+                "grant_type": "authorization_code",
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "redirect_uri": redirect_uri,
+                "code": code
+            })
+        )
+
     def get_template(self, template_id):
         return self.request(
             Route("GET", "/guilds/templates/{template_id}", template_id=template_id)
