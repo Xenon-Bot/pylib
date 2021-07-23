@@ -640,10 +640,10 @@ class HTTPClient(RouteMixin):
         return BucketValues(delta / 1000, int(remaining))
 
     async def set_bucket(self, bucket, remaining, delta):
-        await self._redis.setex(f"ratelimits:{bucket}", delta, remaining)
+        await self._redis.setex(f"ratelimits:{bucket}", max(delta, 0), remaining)
 
     async def set_global(self, delta):
-        await self._redis.setex("ratelimits:global", delta, 0)
+        await self._redis.setex("ratelimits:global", max(delta, 0), 0)
 
     async def get_global(self, delta):
         delta = await self._redis.pttl("ratelimits:global")
