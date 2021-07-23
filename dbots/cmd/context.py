@@ -93,7 +93,6 @@ class CommandContext:
     def uncount_cooldown(self):
         return self.command.cooldown.uncount(self)
 
-
     async def fetch_channel(self):
         if "channel" in self._http_cache:
             return self._http_cache["channel"]

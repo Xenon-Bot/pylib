@@ -414,7 +414,8 @@ class RouteMixin:
 
     def get_user(self, user):
         return self.request(
-            Route("GET", "/users/{user_id}", user_id=entity_or_id(user), converter=User)
+            Route("GET", "/users/{user_id}", user_id=entity_or_id(user)),
+            converter=User
         )
 
     def get_me(self):
