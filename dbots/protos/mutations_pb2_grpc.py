@@ -6,7 +6,7 @@ from . import backups_pb2 as backups__pb2
 from . import mutations_pb2 as mutations__pb2
 
 
-class BackupsStub(object):
+class MutationsStub(object):
     """Missing associated documentation comment in .proto file."""
 
     def __init__(self, channel):
@@ -16,33 +16,33 @@ class BackupsStub(object):
             channel: A grpc.Channel.
         """
         self.FlattenMutations = channel.unary_unary(
-                '/mutations.Backups/FlattenMutations',
+                '/mutations.Mutations/FlattenMutations',
                 request_serializer=mutations__pb2.MutationContainer.SerializeToString,
                 response_deserializer=mutations__pb2.MutationContainer.FromString,
                 )
         self.ReverseMutations = channel.unary_unary(
-                '/mutations.Backups/ReverseMutations',
+                '/mutations.Mutations/ReverseMutations',
                 request_serializer=mutations__pb2.MutationContainer.SerializeToString,
                 response_deserializer=mutations__pb2.MutationContainer.FromString,
                 )
         self.DiscoverMutations = channel.unary_unary(
-                '/mutations.Backups/DiscoverMutations',
+                '/mutations.Mutations/DiscoverMutations',
                 request_serializer=mutations__pb2.DiscoverMutationsRequest.SerializeToString,
                 response_deserializer=mutations__pb2.MutationContainer.FromString,
                 )
         self.MergeMutations = channel.unary_unary(
-                '/mutations.Backups/MergeMutations',
+                '/mutations.Mutations/MergeMutations',
                 request_serializer=mutations__pb2.MutationContainer.SerializeToString,
                 response_deserializer=backups__pb2.BackupData.FromString,
                 )
         self.ApplyMutations = channel.unary_stream(
-                '/mutations.Backups/ApplyMutations',
+                '/mutations.Mutations/ApplyMutations',
                 request_serializer=mutations__pb2.ApplyMutationsRequest.SerializeToString,
                 response_deserializer=mutations__pb2.ApplyMutationsResponse.FromString,
                 )
 
 
-class BackupsServicer(object):
+class MutationsServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def FlattenMutations(self, request, context):
@@ -76,7 +76,7 @@ class BackupsServicer(object):
         raise NotImplementedError('Method not implemented!')
 
 
-def add_BackupsServicer_to_server(servicer, server):
+def add_MutationsServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'FlattenMutations': grpc.unary_unary_rpc_method_handler(
                     servicer.FlattenMutations,
@@ -105,12 +105,12 @@ def add_BackupsServicer_to_server(servicer, server):
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'mutations.Backups', rpc_method_handlers)
+            'mutations.Mutations', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
 
 
  # This class is part of an EXPERIMENTAL API.
-class Backups(object):
+class Mutations(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
@@ -124,7 +124,7 @@ class Backups(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/mutations.Backups/FlattenMutations',
+        return grpc.experimental.unary_unary(request, target, '/mutations.Mutations/FlattenMutations',
             mutations__pb2.MutationContainer.SerializeToString,
             mutations__pb2.MutationContainer.FromString,
             options, channel_credentials,
@@ -141,7 +141,7 @@ class Backups(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/mutations.Backups/ReverseMutations',
+        return grpc.experimental.unary_unary(request, target, '/mutations.Mutations/ReverseMutations',
             mutations__pb2.MutationContainer.SerializeToString,
             mutations__pb2.MutationContainer.FromString,
             options, channel_credentials,
@@ -158,7 +158,7 @@ class Backups(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/mutations.Backups/DiscoverMutations',
+        return grpc.experimental.unary_unary(request, target, '/mutations.Mutations/DiscoverMutations',
             mutations__pb2.DiscoverMutationsRequest.SerializeToString,
             mutations__pb2.MutationContainer.FromString,
             options, channel_credentials,
@@ -175,7 +175,7 @@ class Backups(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/mutations.Backups/MergeMutations',
+        return grpc.experimental.unary_unary(request, target, '/mutations.Mutations/MergeMutations',
             mutations__pb2.MutationContainer.SerializeToString,
             backups__pb2.BackupData.FromString,
             options, channel_credentials,
@@ -192,7 +192,7 @@ class Backups(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_stream(request, target, '/mutations.Backups/ApplyMutations',
+        return grpc.experimental.unary_stream(request, target, '/mutations.Mutations/ApplyMutations',
             mutations__pb2.ApplyMutationsRequest.SerializeToString,
             mutations__pb2.ApplyMutationsResponse.FromString,
             options, channel_credentials,

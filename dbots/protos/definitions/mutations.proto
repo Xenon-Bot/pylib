@@ -28,7 +28,7 @@ message ApplyMutationsRequest {
 
 message ApplyMutationsResponse {}
 
-service Backups {
+service Mutations {
   rpc FlattenMutations(MutationContainer) returns (MutationContainer) {}
   rpc ReverseMutations(MutationContainer) returns (MutationContainer) {}
   rpc DiscoverMutations(DiscoverMutationsRequest) returns (MutationContainer) {}

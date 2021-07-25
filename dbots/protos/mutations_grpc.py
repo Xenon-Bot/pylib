@@ -13,7 +13,7 @@ from . import backups_pb2
 from . import mutations_pb2
 
 
-class BackupsBase(abc.ABC):
+class MutationsBase(abc.ABC):
 
     @abc.abstractmethod
     async def FlattenMutations(self, stream: 'grpclib.server.Stream[mutations_pb2.MutationContainer, mutations_pb2.MutationContainer]') -> None:
@@ -37,31 +37,31 @@ class BackupsBase(abc.ABC):
 
     def __mapping__(self) -> typing.Dict[str, grpclib.const.Handler]:
         return {
-            '/mutations.Backups/FlattenMutations': grpclib.const.Handler(
+            '/mutations.Mutations/FlattenMutations': grpclib.const.Handler(
                 self.FlattenMutations,
                 grpclib.const.Cardinality.UNARY_UNARY,
                 mutations_pb2.MutationContainer,
                 mutations_pb2.MutationContainer,
             ),
-            '/mutations.Backups/ReverseMutations': grpclib.const.Handler(
+            '/mutations.Mutations/ReverseMutations': grpclib.const.Handler(
                 self.ReverseMutations,
                 grpclib.const.Cardinality.UNARY_UNARY,
                 mutations_pb2.MutationContainer,
                 mutations_pb2.MutationContainer,
             ),
-            '/mutations.Backups/DiscoverMutations': grpclib.const.Handler(
+            '/mutations.Mutations/DiscoverMutations': grpclib.const.Handler(
                 self.DiscoverMutations,
                 grpclib.const.Cardinality.UNARY_UNARY,
                 mutations_pb2.DiscoverMutationsRequest,
                 mutations_pb2.MutationContainer,
             ),
-            '/mutations.Backups/MergeMutations': grpclib.const.Handler(
+            '/mutations.Mutations/MergeMutations': grpclib.const.Handler(
                 self.MergeMutations,
                 grpclib.const.Cardinality.UNARY_UNARY,
                 mutations_pb2.MutationContainer,
                 backups_pb2.BackupData,
             ),
-            '/mutations.Backups/ApplyMutations': grpclib.const.Handler(
+            '/mutations.Mutations/ApplyMutations': grpclib.const.Handler(
                 self.ApplyMutations,
                 grpclib.const.Cardinality.UNARY_STREAM,
                 mutations_pb2.ApplyMutationsRequest,
@@ -70,36 +70,36 @@ class BackupsBase(abc.ABC):
         }
 
 
-class BackupsStub:
+class MutationsStub:
 
     def __init__(self, channel: grpclib.client.Channel) -> None:
         self.FlattenMutations = grpclib.client.UnaryUnaryMethod(
             channel,
-            '/mutations.Backups/FlattenMutations',
+            '/mutations.Mutations/FlattenMutations',
             mutations_pb2.MutationContainer,
             mutations_pb2.MutationContainer,
         )
         self.ReverseMutations = grpclib.client.UnaryUnaryMethod(
             channel,
-            '/mutations.Backups/ReverseMutations',
+            '/mutations.Mutations/ReverseMutations',
             mutations_pb2.MutationContainer,
             mutations_pb2.MutationContainer,
         )
         self.DiscoverMutations = grpclib.client.UnaryUnaryMethod(
             channel,
-            '/mutations.Backups/DiscoverMutations',
+            '/mutations.Mutations/DiscoverMutations',
             mutations_pb2.DiscoverMutationsRequest,
             mutations_pb2.MutationContainer,
         )
         self.MergeMutations = grpclib.client.UnaryUnaryMethod(
             channel,
-            '/mutations.Backups/MergeMutations',
+            '/mutations.Mutations/MergeMutations',
             mutations_pb2.MutationContainer,
             backups_pb2.BackupData,
         )
         self.ApplyMutations = grpclib.client.UnaryStreamMethod(
             channel,
-            '/mutations.Backups/ApplyMutations',
+            '/mutations.Mutations/ApplyMutations',
             mutations_pb2.ApplyMutationsRequest,
             mutations_pb2.ApplyMutationsResponse,
         )

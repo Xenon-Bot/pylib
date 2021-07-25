@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x0fmutations.proto\x12\tmutations\x1a\rbackups.proto\"L\n\x08Mutation\x12\x0c\n\x04type\x18\x01 \x01(\r\x12\x11\n\ttimestamp\x18\x02 \x01(\x04\x12\x11\n\ttarget_id\x18\x03 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x04 \x01(\x0c\"h\n\x11MutationContainer\x12+\n\x0estarting_point\x18\x01 \x01(\x0b\x32\x13.backups.BackupData\x12&\n\tmutations\x18\x02 \x03(\x0b\x32\x13.mutations.Mutation\"`\n\x18\x44iscoverMutationsRequest\x12\"\n\x05start\x18\x01 \x01(\x0b\x32\x13.backups.BackupData\x12 \n\x03\x65nd\x18\x02 \x01(\x0b\x32\x13.backups.BackupData\"Q\n\x15\x41pplyMutationsRequest\x12\x10\n\x08guild_id\x18\x01 \x01(\t\x12&\n\tmutations\x18\x02 \x03(\x0b\x32\x13.mutations.Mutation\"\x18\n\x16\x41pplyMutationsResponse2\xa9\x03\n\x07\x42\x61\x63kups\x12P\n\x10\x46lattenMutations\x12\x1c.mutations.MutationContainer\x1a\x1c.mutations.MutationContainer\"\x00\x12P\n\x10ReverseMutations\x12\x1c.mutations.MutationContainer\x1a\x1c.mutations.MutationContainer\"\x00\x12X\n\x11\x44iscoverMutations\x12#.mutations.DiscoverMutationsRequest\x1a\x1c.mutations.MutationContainer\"\x00\x12\x45\n\x0eMergeMutations\x12\x1c.mutations.MutationContainer\x1a\x13.backups.BackupData\"\x00\x12Y\n\x0e\x41pplyMutations\x12 .mutations.ApplyMutationsRequest\x1a!.mutations.ApplyMutationsResponse\"\x00\x30\x01\x62\x06proto3'
+  serialized_pb=b'\n\x0fmutations.proto\x12\tmutations\x1a\rbackups.proto\"L\n\x08Mutation\x12\x0c\n\x04type\x18\x01 \x01(\r\x12\x11\n\ttimestamp\x18\x02 \x01(\x04\x12\x11\n\ttarget_id\x18\x03 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x04 \x01(\x0c\"h\n\x11MutationContainer\x12+\n\x0estarting_point\x18\x01 \x01(\x0b\x32\x13.backups.BackupData\x12&\n\tmutations\x18\x02 \x03(\x0b\x32\x13.mutations.Mutation\"`\n\x18\x44iscoverMutationsRequest\x12\"\n\x05start\x18\x01 \x01(\x0b\x32\x13.backups.BackupData\x12 \n\x03\x65nd\x18\x02 \x01(\x0b\x32\x13.backups.BackupData\"Q\n\x15\x41pplyMutationsRequest\x12\x10\n\x08guild_id\x18\x01 \x01(\t\x12&\n\tmutations\x18\x02 \x03(\x0b\x32\x13.mutations.Mutation\"\x18\n\x16\x41pplyMutationsResponse2\xab\x03\n\tMutations\x12P\n\x10\x46lattenMutations\x12\x1c.mutations.MutationContainer\x1a\x1c.mutations.MutationContainer\"\x00\x12P\n\x10ReverseMutations\x12\x1c.mutations.MutationContainer\x1a\x1c.mutations.MutationContainer\"\x00\x12X\n\x11\x44iscoverMutations\x12#.mutations.DiscoverMutationsRequest\x1a\x1c.mutations.MutationContainer\"\x00\x12\x45\n\x0eMergeMutations\x12\x1c.mutations.MutationContainer\x1a\x13.backups.BackupData\"\x00\x12Y\n\x0e\x41pplyMutations\x12 .mutations.ApplyMutationsRequest\x1a!.mutations.ApplyMutationsResponse\"\x00\x30\x01\x62\x06proto3'
   ,
   dependencies=[backups__pb2.DESCRIPTOR,])
 
@@ -270,19 +270,19 @@ _sym_db.RegisterMessage(ApplyMutationsResponse)
 
 
 
-_BACKUPS = _descriptor.ServiceDescriptor(
-  name='Backups',
-  full_name='mutations.Backups',
+_MUTATIONS = _descriptor.ServiceDescriptor(
+  name='Mutations',
+  full_name='mutations.Mutations',
   file=DESCRIPTOR,
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
   serialized_start=437,
-  serialized_end=862,
+  serialized_end=864,
   methods=[
   _descriptor.MethodDescriptor(
     name='FlattenMutations',
-    full_name='mutations.Backups.FlattenMutations',
+    full_name='mutations.Mutations.FlattenMutations',
     index=0,
     containing_service=None,
     input_type=_MUTATIONCONTAINER,
@@ -292,7 +292,7 @@ _BACKUPS = _descriptor.ServiceDescriptor(
   ),
   _descriptor.MethodDescriptor(
     name='ReverseMutations',
-    full_name='mutations.Backups.ReverseMutations',
+    full_name='mutations.Mutations.ReverseMutations',
     index=1,
     containing_service=None,
     input_type=_MUTATIONCONTAINER,
@@ -302,7 +302,7 @@ _BACKUPS = _descriptor.ServiceDescriptor(
   ),
   _descriptor.MethodDescriptor(
     name='DiscoverMutations',
-    full_name='mutations.Backups.DiscoverMutations',
+    full_name='mutations.Mutations.DiscoverMutations',
     index=2,
     containing_service=None,
     input_type=_DISCOVERMUTATIONSREQUEST,
@@ -312,7 +312,7 @@ _BACKUPS = _descriptor.ServiceDescriptor(
   ),
   _descriptor.MethodDescriptor(
     name='MergeMutations',
-    full_name='mutations.Backups.MergeMutations',
+    full_name='mutations.Mutations.MergeMutations',
     index=3,
     containing_service=None,
     input_type=_MUTATIONCONTAINER,
@@ -322,7 +322,7 @@ _BACKUPS = _descriptor.ServiceDescriptor(
   ),
   _descriptor.MethodDescriptor(
     name='ApplyMutations',
-    full_name='mutations.Backups.ApplyMutations',
+    full_name='mutations.Mutations.ApplyMutations',
     index=4,
     containing_service=None,
     input_type=_APPLYMUTATIONSREQUEST,
@@ -331,8 +331,8 @@ _BACKUPS = _descriptor.ServiceDescriptor(
     create_key=_descriptor._internal_create_key,
   ),
 ])
-_sym_db.RegisterServiceDescriptor(_BACKUPS)
+_sym_db.RegisterServiceDescriptor(_MUTATIONS)
 
-DESCRIPTOR.services_by_name['Backups'] = _BACKUPS
+DESCRIPTOR.services_by_name['Mutations'] = _MUTATIONS
 
 # @@protoc_insertion_point(module_scope)
