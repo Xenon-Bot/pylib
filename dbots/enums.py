@@ -10,7 +10,8 @@ __all__ = (
     "MessageType",
     "WebhookType",
     "PremiumType",
-    "PremiumTier"
+    "PremiumTier",
+    "MutationType"
 )
 
 
@@ -92,3 +93,14 @@ class PremiumTier(IntEnum):
     TIER_1 = 1
     TIER_2 = 2
     TIER_3 = 3
+
+
+class MutationType(IntEnum):
+    CHANNEL_CREATE = 0
+    CHANNEL_UPDATE = 1
+    CHANNEL_DELETE = 2
+    ROLE_CREATE = 3
+    ROLE_UPDATE = 4
+    ROLE_DELETE = 5
+    GUILD_UPDATE = 6
+    MEMBER_UPDATE = 7
