@@ -90,19 +90,13 @@ class InteractionBot:
     def component(self, _callable=None, **kwargs):
         if _callable is None:
             def _predicate(_callable):
-                component = PartialComponent(
-                    name=kwargs.get("name", _callable.__name__),
-                    callable=_callable
-                )
+                component = make_component(_callable, **kwargs)
                 self.components.append(component)
                 return component
 
             return _predicate
 
-        component = PartialComponent(
-            name=kwargs.get("name", _callable.__name__),
-            callable=_callable
-        )
+        component = make_component(_callable, **kwargs)
         self.components.append(component)
         return component
 
@@ -223,14 +217,25 @@ class InteractionBot:
         ctx = ComponentContext(self, component, payload)
 
         async def _executor():
-            result = component.callable(ctx, *args)
-            if inspect.isawaitable(result):
-                await result
+            try:
+                for check in component.checks:
+                    res = await check.run(ctx)
+                    if res is not True:
+                        return
+
+                result = component.callable(ctx, *args)
+                if inspect.isawaitable(result):
+                    await result
+            except Exception as e:
+                await self.on_command_error(ctx, e)
 
         self.loop.create_task(_executor())
         self.loop.call_later(2, lambda: ctx.defer())
 
-        return await ctx.wait()
+        try:
+            return await ctx.wait()
+        except Exception as e:
+            return await self.on_command_error(ctx, e)
 
     async def interaction_received(self, payload):
         if payload.type == InteractionType.PING:

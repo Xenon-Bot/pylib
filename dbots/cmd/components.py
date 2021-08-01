@@ -2,6 +2,8 @@ from enum import IntEnum
 from uuid import uuid4
 import types
 
+from .checks import *
+
 
 __all__ = (
     "ComponentType",
@@ -12,6 +14,7 @@ __all__ = (
     "SelectMenu",
     "SelectMenuOption",
     "PartialComponent",
+    "make_component"
 )
 
 
@@ -19,6 +22,32 @@ class ComponentType(IntEnum):
     ACTION_ROW = 1
     BUTTON = 2
     SELECT_MENU = 3
+
+
+def make_component(cb, **kwargs):
+    checks = []
+    cooldown = None
+    while isinstance(cb, Check):
+        checks.append(cb)
+        if isinstance(cb, Cooldown):
+            cooldown = cb
+
+        cb = cb.next
+
+    values = {
+        "callable": cb,
+        "name": cb.__name__,
+        "checks": checks,
+        "cooldown": cooldown
+    }
+
+    values.update(kwargs)
+    component = PartialComponent(**values)
+
+    if cooldown is not None:
+        cooldown.component = component
+
+    return component
 
 
 class Component:
@@ -126,6 +155,8 @@ class PartialComponent:
     def __init__(self, **kwargs):
         self.name = kwargs["name"]
         self.callable = kwargs["callable"]
+        self.checks = kwargs.get("checks", [])
+        self.cooldown = kwargs.get("cooldown")
 
     def bind(self, obj):
         self.callable = types.MethodType(self.callable, obj)

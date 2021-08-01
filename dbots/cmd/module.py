@@ -43,17 +43,11 @@ class Module:
     def component(_callable=None, **kwargs):
         if _callable is None:
             def _predicate(_callable):
-                return PartialComponent(
-                    name=kwargs.get("name", _callable.__name__),
-                    callable=_callable
-                )
+                return make_component(_callable, **kwargs)
 
             return _predicate
 
-        return PartialComponent(
-            name=kwargs.get("name", _callable.__name__),
-            callable=_callable
-        )
+        return make_component(_callable, **kwargs)
 
     @staticmethod
     def task(**td):
