@@ -641,6 +641,10 @@ class HTTPClient(RouteMixin):
         self.semaphore = None
         self.semaphore = asyncio.Semaphore(kwargs.get("max_concurrency", 50))
 
+    async def close(self):
+        if self._session is not None:
+            await self._session.close()
+
     async def get_bucket(self, bucket):
         delta = await self._redis.pttl(f"ratelimits:{bucket}")
         if delta <= 0:
@@ -735,8 +739,8 @@ class HTTPClient(RouteMixin):
                     if "json" in options:
                         data.add_field("payload_json", orjson.dumps(options.pop("json")).decode("utf-8"))
 
-                    for file in files:
-                        data.add_field('file', file.fp, filename=file.filename, content_type='application/octet-stream')
+                    for i, file in enumerate(files):
+                        data.add_field(f"file{i}", file.fp, filename=file.filename, content_type='application/octet-stream')
 
                     options["data"] = data
 
