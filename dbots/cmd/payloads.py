@@ -31,6 +31,7 @@ class ResolvedEntities:
 
         self.roles = {k: Role(v) for k, v in data.get("roles", {}).items()}
         self.channels = {k: Channel(v) for k, v in data.get("channels", {}).items()}
+        self.messages = {k: Message(v) for k, v in data.get("messages", {}).items()}
 
 
 class InteractionPayload:
@@ -64,6 +65,7 @@ class CommandInteractionData:
     def __init__(self, data):
         self.id = data["id"]
         self.name = data["name"]
+        self.target_id = data.get("target_id")
         self.resolved = ResolvedEntities(data.get("resolved", {}))
         self.options = [CommandInteractionDataOption(o) for o in data.get("options", [])]
 

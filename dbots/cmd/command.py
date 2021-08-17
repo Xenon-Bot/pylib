@@ -8,6 +8,7 @@ from .checks import *
 
 __all__ = (
     "make_command",
+    "CommandType",
     "Command",
     "CommandOption",
     "CommandOptionType",
@@ -80,12 +81,21 @@ def make_command(klass, cb, **kwargs):
 
         cb = cb.next
 
-    doc_lines = inspect.cleandoc(inspect.getdoc(cb)).splitlines()
+
+    doc = inspect.getdoc(cb)
+    description = None
+    long_description = None
+    if doc is not None:
+        doc_lines = inspect.cleandoc(doc).splitlines()
+        if len(doc_lines) != 0:
+            long_description = "\n".join(doc_lines)
+            description = doc_lines[0]
+
     values = {
         "callable": cb,
         "name": cb.__name__,
-        "description": doc_lines[0],
-        "long_description": "\n".join(doc_lines),
+        "description": description,
+        "long_description": long_description,
         "options": inspect_options(cb, extends=kwargs.get("extends")),
         "checks": checks,
         "cooldown": cooldown
@@ -100,8 +110,16 @@ def make_command(klass, cb, **kwargs):
     return command
 
 
+class CommandType(IntEnum):
+    CHAT_INPUT = 1
+    USER = 2
+    MESSAGE = 3
+
+
 class Command:
     def __init__(self, **kwargs):
+        self.id = kwargs.get("id")
+        self.type = kwargs.get("type", CommandType.CHAT_INPUT)
         self.callable = kwargs.get("callable")
         self.name = kwargs["name"]
         self.description = kwargs["description"]
@@ -157,6 +175,7 @@ class Command:
 
     def to_payload(self):
         return {
+            "type": self.type.value,
             "name": self.name,
             "description": self.description,
             "options": [o.to_payload() for o in self.options] + [s.to_payload() for s in self.sub_commands],

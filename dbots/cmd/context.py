@@ -33,6 +33,10 @@ class CommandContext:
     def resolved(self):
         return self.payload.data.resolved
 
+    @property
+    def target_id(self):
+        return self.payload.data.target_id
+
     async def respond(self, *args, **kwargs):
         resp = InteractionResponse.message(*args, **kwargs)
         if self.state == ContextState.NOT_REPLIED and len(resp.files) != 0:
