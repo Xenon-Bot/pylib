@@ -369,6 +369,7 @@ class RouteMixin:
         return self.request(
             Route("PATCH", "/channels/{channel_id}/messages/{message_id}",
                   channel_id=entity_or_id(channel), message_id=entity_or_id(message)),
+            json={"content": content, **kwargs},
             converter=Message
         )
 
