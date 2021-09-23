@@ -65,6 +65,7 @@ def inspect_options(_callable, extends=None):
             # default=False,
             required=p.default == inspect.Parameter.empty,
             choices=[CommandOptionChoice(*o) for o in extend.get("choices", [])],
+            autocomplete=extend.get("autocomplete"),
             converter=converter
         ))
 
@@ -80,7 +81,6 @@ def make_command(klass, cb, **kwargs):
             cooldown = cb
 
         cb = cb.next
-
 
     doc = inspect.getdoc(cb)
     description = None
@@ -143,6 +143,9 @@ class Command:
         for sub_command in self.sub_commands:
             sub_command.bind(obj)
 
+        for option in filter(lambda o: o.autocomplete, self.options):
+            option.autocomplete = types.MethodType(option.autocomplete, obj)
+
     def sub_command_group(self, _callable=None, **kwargs):
         if _callable is None:
             def _predicate(_callable):
@@ -202,6 +205,7 @@ class CommandOption:
         self.default = kwargs.get("default", False)
         self.required = kwargs.get("required", True)
         self.choices = kwargs.get("choices", [])
+        self.autocomplete = kwargs.get("autocomplete")
 
         self.converter = kwargs.get("converter", str)
 
@@ -212,7 +216,8 @@ class CommandOption:
             "description": self.description,
             "default": self.default,
             "required": self.required,
-            "choices": [c.to_payload() for c in self.choices]
+            "choices": [c.to_payload() for c in self.choices],
+            "autocomplete": self.autocomplete is not None
         }
 
 
@@ -235,6 +240,8 @@ class SubCommand:
 
     def bind(self, obj):
         self.callable = types.MethodType(self.callable, obj)
+        for option in filter(lambda o: o.autocomplete, self.options):
+            option.autocomplete = types.MethodType(option.autocomplete, obj)
 
     def to_payload(self):
         return {

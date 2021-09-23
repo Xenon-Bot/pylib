@@ -43,7 +43,6 @@ class InteractionBot:
         self.session = kwargs.get("session", ClientSession(loop=self.loop, connector=connector))
         self.guild_id = kwargs.get("guild_id")  # Can be used during development to avoid the 1 hour cache
         self.app_id = None
-        self.ctx_klass = kwargs.get("ctx_klass", CommandContext)
 
         # Filled by setup()
         self.http = None
@@ -183,7 +182,7 @@ class InteractionBot:
         print("Command Error:\n", tb, file=sys.stderr)
 
     async def execute_command(self, command, payload, remaining_options):
-        ctx = self.ctx_klass(self, command, payload, args=remaining_options)
+        ctx = CommandContext(self, command, payload, args=remaining_options)
 
         async def _executor():
             try:
@@ -212,6 +211,24 @@ class InteractionBot:
             return await ctx.wait()
         except Exception as e:
             return await self.on_command_error(ctx, e)
+
+    async def execute_command_autocomplete(self, command, payload, remaining_options):
+        ctx = CommandContext(self, command, payload, args=remaining_options)
+
+        for passed in remaining_options:
+            if not passed.focused:
+                continue
+
+            for option in command.options:
+                if option.name != passed.name:
+                    continue
+
+                if option.autocomplete:
+                    return await option.autocomplete(ctx, passed.value)
+
+                break
+
+        return InteractionResponse.autocomplete()
 
     async def execute_component(self, component, payload, args):
         ctx = ComponentContext(self, component, payload)
@@ -247,6 +264,13 @@ class InteractionBot:
                 return None
 
             return await self.execute_command(command, payload, remaining_options)
+
+        elif payload.type == InteractionType.APPLICATION_COMMAND_AUTOCOMPLETE:
+            command, remaining_options = self.find_command(payload.data)
+            if command is None:
+                return None
+
+            return await self.execute_command_autocomplete(command, payload, remaining_options)
 
         elif payload.type == InteractionType.APPLICATION_COMPONENT:
             parts = payload.data.custom_id.split("?")

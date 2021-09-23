@@ -17,6 +17,7 @@ class InteractionType(IntEnum):
     PING = 1
     APPLICATION_COMMAND = 2
     APPLICATION_COMPONENT = 3
+    APPLICATION_COMMAND_AUTOCOMPLETE = 4
 
 
 class ResolvedEntities:
@@ -49,7 +50,7 @@ class InteractionPayload:
             else:
                 self.author = User(data["user"])
 
-        if self.type == InteractionType.APPLICATION_COMMAND:
+        if self.type in {InteractionType.APPLICATION_COMMAND, InteractionType.APPLICATION_COMMAND_AUTOCOMPLETE}:
             self.data = CommandInteractionData(data["data"])
 
         elif self.type == InteractionType.APPLICATION_COMPONENT:
@@ -75,6 +76,7 @@ class CommandInteractionDataOption:
         self.name = data["name"]
         self.value = data.get("value")
         self.options = [CommandInteractionDataOption(o) for o in data.get("options", [])]
+        self.focused = data.get("focused", False)
 
 
 class ComponentInteractionData:

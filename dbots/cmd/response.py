@@ -15,6 +15,7 @@ class InteractionResponseType(IntEnum):
     DEFERRED = 5
     DEFERRED_MESSAGE_UPDATE = 6
     UPDATE_MESSAGE = 7
+    APPLICATION_COMMAND_AUTOCOMPLETE_RESULT = 8
 
 
 class InteractionResponse:
@@ -65,6 +66,16 @@ class InteractionResponse:
     @classmethod
     def message_update(cls, *args, **kwargs):
         return cls(InteractionResponseType.UPDATE_MESSAGE, *args, **kwargs)
+
+    @classmethod
+    def autocomplete(cls, *choices):
+        return cls(InteractionResponseType.APPLICATION_COMMAND_AUTOCOMPLETE_RESULT, choices=[
+            {
+                "name": name,
+                "value": value
+            }
+            for name, value in choices
+        ])
 
     def to_dict(self):
         return {
