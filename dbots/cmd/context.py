@@ -8,7 +8,8 @@ from ..rest import *
 __all__ = (
     "CommandContext",
     "ContextState",
-    "ComponentContext"
+    "ComponentContext",
+    "CommandAutocompleteContext"
 )
 
 
@@ -18,20 +19,69 @@ class ContextState(IntEnum):
     REPLIED = 2
 
 
-class CommandContext:
-    def __init__(self, bot, command, payload, args):
+class InteractionContext:
+    def __init__(self, bot, payload):
         self.bot = bot
         self.payload = payload
-        self.command = command
-        self.args = args
         self._http_cache = {}
-
-        self.state = ContextState.NOT_REPLIED
-        self._future = bot.loop.create_future()
 
     @property
     def resolved(self):
         return self.payload.data.resolved
+
+    async def fetch_channel(self):
+        if "channel" in self._http_cache:
+            return self._http_cache["channel"]
+
+        channel = await self.bot.http.get_channel(self.channel_id)
+        self._http_cache["channel"] = channel
+        return channel
+
+    async def fetch_guild(self):
+        if "guild" in self._http_cache:
+            return self._http_cache["guild"]
+
+        guild = await self.bot.http.get_guild(self.guild_id)
+        self._http_cache["guild"] = guild
+        self._http_cache["roles"] = guild.roles
+        return guild
+
+    async def fetch_guild_channels(self):
+        if "channels" in self._http_cache:
+            return self._http_cache["channels"]
+
+        channels = await self.bot.http.get_guild_channels(self.guild_id)
+        self._http_cache["channels"] = channels
+        return channels
+
+    async def fetch_guild_roles(self):
+        if "roles" in self._http_cache:
+            return self._http_cache["roles"]
+
+        roles = await self.bot.http.get_guild_roles(self.guild_id)
+        self._http_cache["roles"] = roles
+        return roles
+
+    async def fetch_bot_member(self):
+        if "member" in self._http_cache:
+            return self._http_cache["member"]
+
+        member = await self.bot.http.get_guild_member(self.guild_id, self.bot.http.application_id)
+        self._http_cache["member"] = member
+        return member
+
+    def __getattr__(self, item):
+        return getattr(self.payload, item)
+
+
+class CommandContext(InteractionContext):
+    def __init__(self, bot, command, payload, args):
+        super().__init__(bot, payload)
+        self.command = command
+        self.args = args
+
+        self.state = ContextState.NOT_REPLIED
+        self._future = bot.loop.create_future()
 
     @property
     def target_id(self):
@@ -97,57 +147,18 @@ class CommandContext:
     def uncount_cooldown(self):
         return self.command.cooldown.uncount(self)
 
-    async def fetch_channel(self):
-        if "channel" in self._http_cache:
-            return self._http_cache["channel"]
 
-        channel = await self.bot.http.get_channel(self.channel_id)
-        self._http_cache["channel"] = channel
-        return channel
-
-    async def fetch_guild(self):
-        if "guild" in self._http_cache:
-            return self._http_cache["guild"]
-
-        guild = await self.bot.http.get_guild(self.guild_id)
-        self._http_cache["guild"] = guild
-        self._http_cache["roles"] = guild.roles
-        return guild
-
-    async def fetch_guild_channels(self):
-        if "channels" in self._http_cache:
-            return self._http_cache["channels"]
-
-        channels = await self.bot.http.get_guild_channels(self.guild_id)
-        self._http_cache["channels"] = channels
-        return channels
-
-    async def fetch_guild_roles(self):
-        if "roles" in self._http_cache:
-            return self._http_cache["roles"]
-
-        roles = await self.bot.http.get_guild_roles(self.guild_id)
-        self._http_cache["roles"] = roles
-        return roles
-
-    async def fetch_bot_member(self):
-        if "member" in self._http_cache:
-            return self._http_cache["member"]
-
-        member = await self.bot.http.get_guild_member(self.guild_id, self.bot.http.application_id)
-        self._http_cache["member"] = member
-        return member
-
-    def __getattr__(self, item):
-        return getattr(self.payload, item)
+class CommandAutocompleteContext(InteractionContext):
+    def __init__(self, bot, command, payload, args):
+        super().__init__(bot, payload)
+        self.command = command
+        self.args = args
 
 
-class ComponentContext:
+class ComponentContext(InteractionContext):
     def __init__(self, bot, component, payload):
-        self.bot = bot
+        super().__init__(bot, payload)
         self.component = component
-        self.payload = payload
-        self._http_cache = {}
 
         self.state = ContextState.NOT_REPLIED
         self._future = bot.loop.create_future()
@@ -210,47 +221,3 @@ class ComponentContext:
 
     async def wait(self):
         return await self._future
-
-    async def fetch_channel(self):
-        if "channel" in self._http_cache:
-            return self._http_cache["channel"]
-
-        channel = await self.bot.http.get_channel(self.channel_id)
-        self._http_cache["channel"] = channel
-        return channel
-
-    async def fetch_guild(self):
-        if "guild" in self._http_cache:
-            return self._http_cache["guild"]
-
-        guild = await self.bot.http.get_guild(self.guild_id)
-        self._http_cache["guild"] = guild
-        self._http_cache["roles"] = guild.roles
-        return guild
-
-    async def fetch_guild_channels(self):
-        if "channels" in self._http_cache:
-            return self._http_cache["channels"]
-
-        channels = await self.bot.http.get_guild_channels(self.guild_id)
-        self._http_cache["channels"] = channels
-        return channels
-
-    async def fetch_guild_roles(self):
-        if "roles" in self._http_cache:
-            return self._http_cache["roles"]
-
-        roles = await self.bot.http.get_guild_roles(self.guild_id)
-        self._http_cache["roles"] = roles
-        return roles
-
-    async def fetch_bot_member(self):
-        if "member" in self._http_cache:
-            return self._http_cache["member"]
-
-        member = await self.bot.http.get_guild_member(self.guild_id, self.bot.http.application_id)
-        self._http_cache["member"] = member
-        return member
-
-    def __getattr__(self, item):
-        return getattr(self.payload, item)

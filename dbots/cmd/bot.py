@@ -213,7 +213,7 @@ class InteractionBot:
             return await self.on_command_error(ctx, e)
 
     async def execute_command_autocomplete(self, command, payload, remaining_options):
-        ctx = CommandContext(self, command, payload, args=remaining_options)
+        ctx = CommandAutocompleteContext(self, command, payload, args=remaining_options)
 
         for passed in remaining_options:
             if not passed.focused:
@@ -346,6 +346,18 @@ class InteractionBot:
             return "/applications/{app_id}/guilds/{guild_id}/commands"
         else:
             return "/applications/{app_id}/commands"
+
+    async def fill_command_ids(self):
+        if self.guild_id is None:
+            commands = await self.http.get_global_commands()
+
+        else:
+            commands = await self.http.get_guild_commands(self.guild_id)
+
+        for cmd in commands:
+            matching = iterable_get(self.commands, name=cmd["name"])
+            if matching is not None:
+                matching.id = cmd["id"]
 
     async def push_commands(self):
         data = [c.to_payload() for c in self.commands if c.register]
