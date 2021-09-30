@@ -96,7 +96,7 @@ class BucketValues:
 
 
 class Route:
-    BASE = 'https://discord.com/api/v8'
+    BASE = f"{env.get('DISCORD_API_URL', 'https://discord.com')}/api/v8"
 
     def __init__(self, method, path, **params):
         self.method = method
