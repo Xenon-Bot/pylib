@@ -96,7 +96,7 @@ class BucketValues:
 
 
 class Route:
-    BASE = f"{env.get('DISCORD_API_URL', 'https://discord.com')}/api/v8"
+    BASE = f"{env.get('DISCORD_API_URL', 'https://discord.com')}/api/v9"
 
     def __init__(self, method, path, **params):
         self.method = method
@@ -461,13 +461,17 @@ class RouteMixin:
             converter=Webhook
         )
 
-    def create_webhook_message(self, webhook, wait=False, files=None, **options):
+    def create_webhook_message(self, webhook, wait=False, thread_id=None, files=None, **options):
+        params = {"wait": "true" if wait else "false"}
+        if thread_id:
+            params["thread_id"] = thread_id
+
         return self.request(
             Route("POST", "/webhooks/{webhook_id}/{webhook_token}",
                   webhook_id=webhook.id, webhook_token=webhook.token),
             json=make_json(options),
             files=files,
-            params={"wait": "true" if wait else "false"},
+            params=params,
             converter=Message if wait else None
         )
 
