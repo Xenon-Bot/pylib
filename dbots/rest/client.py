@@ -495,6 +495,7 @@ class RouteMixin:
     def exchange_oauth_token(self, client_id, client_secret, redirect_uri, code):
         return self.request(
             Route("POST", "/oauth2/token"),
+            auth="",
             data=make_json({
                 "grant_type": "authorization_code",
                 "client_id": client_id,
@@ -502,6 +503,31 @@ class RouteMixin:
                 "redirect_uri": redirect_uri,
                 "code": code
             })
+        )
+
+    def refresh_oauth_token(self, client_id, client_secret, refresh_token):
+        return self.request(
+            Route("POST", "/oauth2/token"),
+            auth="",
+            data=make_json({
+                "grant_type": "refresh_token",
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "refresh_token": refresh_token
+            })
+        )
+
+    def get_oauth_user(self, token):
+        return self.request(
+            Route("GET", "/users/@me"),
+            auth=f"Bearer {token}",
+            converter=User
+        )
+
+    def get_oauth_guilds(self, token):
+        return self.request(
+            Route("GET", "/users/@me/guilds"),
+            auth=f"Bearer {token}"
         )
 
     def get_template(self, template_id):
@@ -677,7 +703,7 @@ class HTTPClient(RouteMixin):
     async def _perform_request(self, route, **kwargs):
         headers = {
             "User-Agent": "",
-            "Authorization": f"Bot {self._token}"
+            "Authorization": kwargs.pop("auth", f"Bot {self._token}")
         }
 
         if "json" in kwargs:
