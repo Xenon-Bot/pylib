@@ -304,7 +304,7 @@ class Role(Entity):
             "color": self.color,
             "hoist": self.hoist,
             "position": self.position,
-            "permissions": self.permissions.value,
+            "permissions": str(self.permissions.value),
             "managed": self.managed,
             "mentionable": self.mentionable,
             "guild_id": self.guild_id

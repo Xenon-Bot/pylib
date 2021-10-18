@@ -391,8 +391,17 @@ class RouteMixin:
     def bulk_delete_messages(self):
         pass
 
-    def get_reactions(self):
-        pass
+    def get_reactions(self, channel, message, emoji, limit=100, after=None):
+        params = {"limit": str(limit)}
+        if after is not None:
+            params["after"] = entity_or_id(after)
+
+        return self.request(
+            Route("GET", "/channels/{channel_id}/messages/{message_id}/reactions/{emoji}",
+                  channel_id=entity_or_id(channel), message_id=entity_or_id(message), emoji=emoji),
+            converter=lambda d: [User(u) for u in d],
+            params=params
+        )
 
     def create_reaction(self, channel, message, emoji):
         return self.request(Route("PUT", "/channels/{channel_id}/messages/{message_id}/reactions/{emoji}/@me",
@@ -612,19 +621,21 @@ class RouteMixin:
             json=data
         )
 
-    def create_interaction_response(self, interaction_token, **options):
+    def create_interaction_response(self, interaction_token, files=None, **options):
         return self.request(
             Route("POST", "/webhooks/{application_id}/{webhook_token}",
                   application_id=self.application_id, webhook_token=interaction_token),
+            files=files,
             json=make_json(options),
             converter=Message
         )
 
-    def edit_interaction_response(self, interaction_token, message="@original", **options):
+    def edit_interaction_response(self, interaction_token, message="@original", files=None, **options):
         return self.request(
             Route("PATCH", "/webhooks/{application_id}/{webhook_token}/messages/{message_id}",
                   application_id=self.application_id, webhook_token=interaction_token,
                   message_id=entity_or_id(message)),
+            files=files,
             json=make_json(options),
             converter=Message
         )
@@ -771,7 +782,8 @@ class HTTPClient(RouteMixin):
                         data.add_field("payload_json", orjson.dumps(options.pop("json")).decode("utf-8"))
 
                     for i, file in enumerate(files):
-                        data.add_field(f"file{i}", file.fp, filename=file.filename, content_type='application/octet-stream')
+                        data.add_field(f"file{i}", file.fp, filename=file.filename,
+                                       content_type='application/octet-stream')
 
                     options["data"] = data
 

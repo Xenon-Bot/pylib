@@ -90,7 +90,7 @@ class CommandContext(InteractionContext):
     async def respond(self, *args, **kwargs):
         resp = InteractionResponse.message(*args, **kwargs)
         if self.state == ContextState.NOT_REPLIED and len(resp.files) != 0:
-            self.defer()
+            self.defer(ephemeral=kwargs.get("ephemeral", False))
 
         if self.state == ContextState.NOT_REPLIED:
             self._future.set_result(resp)
