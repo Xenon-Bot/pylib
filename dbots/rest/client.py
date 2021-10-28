@@ -143,7 +143,18 @@ class RouteMixin:
         )
 
     def delete_guild(self, guild):
-        return self.request(Route("DELETE", "/guilds/{guild_id}", guild_id=guild.id))
+        return self.request(Route("DELETE", "/guilds/{guild_id}", guild_id=entity_or_id(guild)))
+
+    def get_guild_widget(self, guild):
+        return self.request(
+            Route("GET", "/guilds/{guild_id}/widget.json", guild_id=entity_or_id(guild)),
+            auth=""
+        )
+
+    def get_guild_preview(self, guild):
+        return self.request(
+            Route("GET", "/guilds/{guild_id}/preview", guild_id=entity_or_id(guild)),
+        )
 
     def get_guild_channels(self, guild):
         def _converter(data):
