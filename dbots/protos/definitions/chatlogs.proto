@@ -40,6 +40,7 @@ message LoadRequest {
   string channel_id = 1;
   ChatlogData data = 2;
   uint32 message_count = 3;
+  uint32 max_file_size = 4;
 }
 
 message LoadReply {}
