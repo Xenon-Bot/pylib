@@ -5,14 +5,14 @@ import "backups.proto";
 package mutations;
 
 message Mutation {
-  uint32 type = 1;
+  uint32 kind = 1;
   uint64 timestamp = 2;
   string target_id = 3;
   bytes data = 4;
 }
 
 message MutationContainer {
-  backups.BackupData starting_point = 1;
+  backups.BackupData base = 1;
   repeated Mutation mutations = 2;
 }
 

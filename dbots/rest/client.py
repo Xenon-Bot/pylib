@@ -546,7 +546,7 @@ class RouteMixin:
 
     def get_oauth_guilds(self, token):
         return self.request(
-            Route("GET", "/users/@me/guilds"),
+            Route("GET", f"/users/@me/guilds"),
             auth=f"Bearer {token}"
         )
 
