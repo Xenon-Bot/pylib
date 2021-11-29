@@ -18,6 +18,7 @@ class InteractionType(IntEnum):
     APPLICATION_COMMAND = 2
     APPLICATION_COMPONENT = 3
     APPLICATION_COMMAND_AUTOCOMPLETE = 4
+    MODAL_SUBMIT = 5
 
 
 class ResolvedEntities:
@@ -61,6 +62,9 @@ class InteractionPayload:
 
             self.data = ComponentInteractionData(data["data"])
 
+        elif self.type == InteractionType.MODAL_SUBMIT:
+            self.data = ModalSubmitInteractionData(data["data"])
+
 
 class CommandInteractionData:
     def __init__(self, data):
@@ -86,3 +90,21 @@ class ComponentInteractionData:
 
         if self.component_type == ComponentType.SELECT_MENU:
             self.values = data["values"]
+
+
+class SubmittedComponent:
+    def __init__(self, data):
+        self.type = data["type"]
+        self.custom_id = data.get("custom_id")
+        self.value = data.get("value")
+
+        self.components = [
+            SubmittedComponent(c)
+            for c in data.get("components", [])
+        ]
+
+
+class ModalSubmitInteractionData:
+    def __init__(self, data):
+        self.custom_id = data["custom_id"]
+        self.components = [SubmittedComponent(d) for d in data["components"]]

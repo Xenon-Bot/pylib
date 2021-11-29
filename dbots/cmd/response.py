@@ -16,6 +16,7 @@ class InteractionResponseType(IntEnum):
     DEFERRED_MESSAGE_UPDATE = 6
     UPDATE_MESSAGE = 7
     APPLICATION_COMMAND_AUTOCOMPLETE_RESULT = 8
+    MODAL = 9
 
 
 class InteractionResponse:
@@ -24,7 +25,7 @@ class InteractionResponse:
         self.files = kwargs.pop("files", [])
         self.data = kwargs
         if "allowed_mentions" not in self.data:
-            self.data["allowed_mentions"] = {"parse": ["users"]}
+           self.data["allowed_m/mentions"] = {"parse": ["users"]}
 
         self.data["content"] = content
         if kwargs.pop("ephemeral", False):
@@ -76,6 +77,10 @@ class InteractionResponse:
             }
             for name, value in choices
         ])
+
+    @classmethod
+    def modal(cls, *args, **kwargs):
+        return cls(InteractionResponseType.MODAL, *args, **kwargs)
 
     def to_dict(self):
         return {

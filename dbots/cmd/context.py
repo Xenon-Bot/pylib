@@ -1,3 +1,4 @@
+import json
 from enum import IntEnum
 import asyncio
 
@@ -9,7 +10,8 @@ __all__ = (
     "CommandContext",
     "ContextState",
     "ComponentContext",
-    "CommandAutocompleteContext"
+    "CommandAutocompleteContext",
+    "ModalContext"
 )
 
 
@@ -135,6 +137,14 @@ class CommandContext(InteractionContext):
     async def delete_response(self, message_id="@original"):
         return await self.bot.http.delete_interaction_response(self.token, message_id)
 
+    async def modal(self, *args, **kwargs):
+        if self.state != ContextState.NOT_REPLIED:
+            raise TimeoutError("Command has already been responded to")
+
+        resp = InteractionResponse.modal(*args, **kwargs)
+        self._future.set_result(resp)
+        self.state = ContextState.REPLIED
+
     async def wait(self):
         return await self._future
 
@@ -170,6 +180,74 @@ class ComponentContext(InteractionContext):
     @property
     def values(self):
         return self.payload.data.values
+
+    async def respond(self, *args, **kwargs):
+        resp = InteractionResponse.message(*args, **kwargs)
+        if self.state == ContextState.NOT_REPLIED and len(resp.files) != 0:
+            self.defer()
+
+        if self.state == ContextState.NOT_REPLIED:
+            self._future.set_result(resp)
+            self.state = ContextState.REPLIED
+        else:
+            result = await self.bot.http.create_interaction_response(
+                self.token,
+                files=resp.files if len(resp.files) > 0 else None,
+                **resp.data
+            )
+            self.state = ContextState.REPLIED
+            return result
+
+    async def edit_response(self, *args, message_id="@original", failover=True, **kwargs):
+        resp = InteractionResponse.message_update(*args, **kwargs)
+        if message_id == "@original" and self.state == ContextState.NOT_REPLIED:
+            self.state = ContextState.REPLIED
+            self._future.set_result(resp)
+        else:
+            try:
+                return await self.bot.http.edit_interaction_response(
+                    self.token,
+                    message_id,
+                    files=resp.files if len(resp.files) > 0 else None,
+                    **resp.data
+                )
+            except HTTPNotFound:
+                if failover:
+                    return await self.respond(*args, **kwargs)
+                else:
+                    raise
+
+    def update(self, *args, **kwargs):
+        return self.edit_response(*args, message_id="@original", **kwargs)
+
+    def defer(self, *args, **kwargs):
+        if self.state == ContextState.NOT_REPLIED:
+            resp = InteractionResponse.defer_message_update(*args, **kwargs)
+            self._future.set_result(resp)
+            self.state = ContextState.DEFERRED
+
+    async def delete_response(self, message_id="@original"):
+        return await self.bot.http.delete_interaction_response(self.token, message_id)
+
+    async def wait(self):
+        return await self._future
+
+
+class ModalContext(InteractionContext):
+    def __init__(self, bot, component, payload):
+        super().__init__(bot, payload)
+        self.component = component
+
+        self.state = ContextState.NOT_REPLIED
+        self._future = bot.loop.create_future()
+
+    @property
+    def custom_id(self):
+        return self.payload.data.custom_id
+
+    @property
+    def components(self):
+        return self.payload.data.components
 
     async def respond(self, *args, **kwargs):
         resp = InteractionResponse.message(*args, **kwargs)

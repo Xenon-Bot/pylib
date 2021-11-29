@@ -1,6 +1,7 @@
 from .command import *
 from .task import *
 from .components import *
+from .modals import *
 
 
 __all__ = (
@@ -15,6 +16,7 @@ class Module:
         self.commands = []
         self.tasks = []
         self.components = []
+        self.modals = []
         for name in dir(self):
             attr = getattr(self, name)
             if isinstance(attr, Command):
@@ -28,6 +30,10 @@ class Module:
             elif isinstance(attr, PartialComponent):
                 attr.bind(self)
                 self.components.append(attr)
+
+            elif isinstance(attr, PartialModal):
+                attr.bind(self)
+                self.modals.append(attr)
 
     @staticmethod
     def command(_callable=None, **kwargs):
@@ -48,6 +54,16 @@ class Module:
             return _predicate
 
         return make_component(_callable, **kwargs)
+
+    @staticmethod
+    def modal(_callable=None, **kwargs):
+        if _callable is None:
+            def _predicate(_callable):
+                return make_modal(_callable, **kwargs)
+
+            return _predicate
+
+        return make_modal(_callable, **kwargs)
 
     @staticmethod
     def task(**td):

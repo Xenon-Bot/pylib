@@ -19,6 +19,7 @@ from .payloads import *
 from .response import *
 from .task import *
 from .components import *
+from .modals import *
 
 __all__ = (
     "InteractionBot",
@@ -30,6 +31,7 @@ class InteractionBot:
         self.commands = []
         self.tasks = []
         self.components = []
+        self.modals = []
         self.public_key = VerifyKey(bytes.fromhex(kwargs["public_key"]))
         self.token = kwargs["token"]
         self._loop = kwargs.get("loop")
@@ -98,6 +100,19 @@ class InteractionBot:
         component = make_component(_callable, **kwargs)
         self.components.append(component)
         return component
+
+    def modal(self, _callable=None, **kwargs):
+        if _callable is None:
+            def _predicate(_callable):
+                modal = make_modal(_callable, **kwargs)
+                self.modals.append(modal)
+                return modal
+
+            return _predicate
+
+        modal = make_modal(_callable, **kwargs)
+        self.modals.append(modal)
+        return modal
 
     def task(self, **td):
         def _predicate(_callable):
@@ -173,6 +188,9 @@ class InteractionBot:
 
         for c in module.components:
             self.components.append(c)
+
+        for m in module.modals:
+            self.modals.append(m)
 
     async def on_command_error(self, ctx, e):
         if isinstance(e, asyncio.CancelledError):
@@ -254,6 +272,30 @@ class InteractionBot:
         except Exception as e:
             return await self.on_command_error(ctx, e)
 
+    async def execute_modal(self, modal, payload):
+        ctx = ModalContext(self, modal, payload)
+
+        async def _executor():
+            try:
+                for check in modal.checks:
+                    res = await check.run(ctx)
+                    if res is not True:
+                        return
+
+                result = modal.callable(ctx)
+                if inspect.isawaitable(result):
+                    await result
+            except Exception as e:
+                await self.on_command_error(ctx, e)
+
+        self.loop.create_task(_executor())
+        self.loop.call_later(2, lambda: ctx.defer())
+
+        try:
+            return await ctx.wait()
+        except Exception as e:
+            return await self.on_command_error(ctx, e)
+
     async def interaction_received(self, payload):
         if payload.type == InteractionType.PING:
             return InteractionResponse.pong()
@@ -287,6 +329,16 @@ class InteractionBot:
 
             return InteractionResponse.message(
                 "Uh, I sadly can't find the button you just clicked :(",
+                ephemeral=True
+            )
+
+        elif payload.type == InteractionType.MODAL_SUBMIT:
+            for modal in self.modals:
+                if modal.name == payload.data.custom_id:
+                    return await self.execute_modal(modal, payload)
+
+            return InteractionResponse.message(
+                "Uh, I sadly can't find the modal you just clicked :(",
                 ephemeral=True
             )
 

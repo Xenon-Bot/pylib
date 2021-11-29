@@ -14,7 +14,9 @@ __all__ = (
     "SelectMenu",
     "SelectMenuOption",
     "PartialComponent",
-    "make_component"
+    "make_component",
+    "TextInput",
+    "TextInputStyle"
 )
 
 
@@ -22,6 +24,7 @@ class ComponentType(IntEnum):
     ACTION_ROW = 1
     BUTTON = 2
     SELECT_MENU = 3
+    INPUT_TEXT = 4
 
 
 def make_component(cb, **kwargs):
@@ -148,6 +151,32 @@ class SelectMenuOption:
             "description": self.description,
             "emoji": self.emoji,
             "default": self.default
+        }
+
+
+class TextInputStyle(IntEnum):
+    SHORT = 1
+    PARAGRAPH = 2
+
+
+class TextInput(Component):
+    def __init__(self, **kwargs):
+        super().__init__(type=ComponentType.INPUT_TEXT, **kwargs)
+        self.label = kwargs["label"]
+        self.style = kwargs.get("style", TextInputStyle.SHORT)
+        self.placeholder = kwargs.get("placeholder")
+        self.min_length = kwargs.get("min_length")
+        self.max_length = kwargs.get("max_length")
+
+    def to_payload(self):
+        return {
+            "type": self.type.value,
+            "label": self.label,
+            "style": self.style.value,
+            "custom_id": self.custom_id,
+            "placeholder": self.placeholder,
+            "min_length": self.min_length,
+            "max_length": self.max_length
         }
 
 
