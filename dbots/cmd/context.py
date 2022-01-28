@@ -234,9 +234,9 @@ class ComponentContext(InteractionContext):
 
 
 class ModalContext(InteractionContext):
-    def __init__(self, bot, component, payload):
+    def __init__(self, bot, modal, payload):
         super().__init__(bot, payload)
-        self.component = component
+        self.modal = modal
 
         self.state = ContextState.NOT_REPLIED
         self._future = bot.loop.create_future()
