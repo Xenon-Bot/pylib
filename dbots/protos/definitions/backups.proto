@@ -96,6 +96,9 @@ message LoadRequest {
   string reason = 4;
   repeated string options = 5;
   uint32 message_count = 6;
+
+  repeated string exclude_delete_ids = 7;
+  repeated string exclude_load_ids = 8;
 }
 
 message LoadStatus {
