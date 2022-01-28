@@ -2,6 +2,7 @@ import random
 from datetime import datetime, timedelta
 import zlib
 import re
+import secrets
 
 
 __all__ = (
@@ -13,7 +14,8 @@ __all__ = (
     "datetime_to_string",
     "timedelta_to_string",
     "string_to_timedelta",
-    "time_units"
+    "time_units",
+    "secure_id"
 )
 
 
@@ -48,6 +50,10 @@ def unique_id():
 
 def timestamp_from_id(uid):
     return datetime.utcfromtimestamp((base36_loads(uid) >> 8) / 1000)
+
+
+def secure_id():
+    return secrets.token_urlsafe(64)
 
 
 def chunk_blob(blob: bytes, size_limit=7000000):
