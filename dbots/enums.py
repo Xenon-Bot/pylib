@@ -75,6 +75,14 @@ class MessageType(IntEnum):
     APPLICATION_COMMAND = 20
     THREAD_STARTER_MESSAGE = 21
     GUILD_INVITE_REMINDER = 22
+    CONTEXT_MENU_COMMAND = 23
+    UNKNOWN_1 = 24
+    UNKNOWN_2 = 25
+    UNKNOWN_3 = 26
+    UNKNOWN_4 = 27
+    UNKNOWN_5 = 28
+    UNKNOWN_6 = 29
+    UNKNOWN_7 = 30
 
 
 class WebhookType(IntEnum):
