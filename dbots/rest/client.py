@@ -252,7 +252,7 @@ class RouteMixin:
 
     def remove_guild_ban(self, guild, user):
         return self.request(
-            Route("PUT", "/guilds/{guild_id}/bans/{user_id}",
+            Route("DELETE", "/guilds/{guild_id}/bans/{user_id}",
                   guild_id=entity_or_id(guild), user_id=entity_or_id(user))
         )
 
