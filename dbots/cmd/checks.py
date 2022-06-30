@@ -77,7 +77,7 @@ def bot_has_permissions(*args, **kwargs):
 
         missing = []
         for perm in required:
-            if not getattr(perms, perm, False):
+            if not getattr(ctx.app_permissions, perm, False):
                 missing.append(perm.title())
 
         if len(missing) == 0:
