@@ -661,13 +661,11 @@ class RouteMixin:
         )
 
     async def get_ratelimit_bucket(self, route: Route):
-        print(f"/{route.full_path}")
         resp = await self.request(Route("GET", "/bucket", api_prefix=False), params={
             "method": route.method.upper(),
             "path": f"/{route.full_path}"
         })
         data = orjson.loads(resp)
-        print(data)
         if data["found"]:
             return data["bucket"]
         else:
