@@ -34,15 +34,8 @@ class InteractionBot:
         self.modals = []
         self.public_key = VerifyKey(bytes.fromhex(kwargs["public_key"]))
         self.token = kwargs["token"]
-        self._loop = kwargs.get("loop")
 
-        bind_to = env.get("BIND_INTERFACE")
-        if bind_to is not None:
-            connector = TCPConnector(local_addr=(bind_to, 0))
-        else:
-            connector = TCPConnector()
-
-        self.session = kwargs.get("session", ClientSession(loop=self.loop, connector=connector))
+        self.session = None
         self.guild_id = kwargs.get("guild_id")  # Can be used during development to avoid the 1 hour cache
         self.app_id = None
 
@@ -55,7 +48,7 @@ class InteractionBot:
 
     @property
     def loop(self):
-        return self._loop or asyncio.get_event_loop()
+        return asyncio.get_event_loop()
 
     def find_command(self, data):
         base_command = iterable_get(self.commands, name=data.name)
@@ -383,6 +376,14 @@ class InteractionBot:
         return response.json(resp.to_dict())
 
     async def setup(self, redis_url="redis://localhost"):
+        bind_to = env.get("BIND_INTERFACE")
+        if bind_to is not None:
+            connector = TCPConnector(local_addr=(bind_to, 0))
+        else:
+            connector = TCPConnector()
+
+        self.session = ClientSession(loop=self.loop, connector=connector)
+
         self.redis = await aioredis.create_redis_pool(redis_url)
         self.http = HTTPClient(self.token, self.redis)
         app = await self.http.get_application()
