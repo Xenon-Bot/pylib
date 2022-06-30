@@ -1,8 +1,7 @@
 from enum import IntEnum
 
-from .. import Member, User, Role, Channel, Message, Snowflake
 from .components import ComponentType
-
+from .. import Member, User, Role, Channel, Message, Snowflake, Permissions
 
 __all__ = (
     "InteractionType",
@@ -44,6 +43,7 @@ class InteractionPayload:
         self.channel_id = data.get("channel_id")
         self.token = data.get("token")
         self.version = data.get("version")
+        self.app_permissions = Permissions(int(data["app_permissions"])) if "app_permissions" in data else None
 
         if self.type != InteractionType.PING:
             if "member" in data:

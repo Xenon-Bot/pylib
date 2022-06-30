@@ -66,11 +66,13 @@ def bot_has_permissions(*args, **kwargs):
     @Check
     async def _check(ctx, **_):
         required = list(args) + list(kwargs.keys())
-        bot_member = await ctx.fetch_bot_member()
-        guild = await ctx.fetch_guild()
+        if ctx.app_permissions is None:
+            await ctx.respond(**create_message(
+                f"**The bot** is **not a member** of this server.",
+                f=Format.ERROR
+            ), ephemeral=True)
 
-        perms = guild.compute_permissions(bot_member)
-        if perms.administrator:
+        if ctx.app_permissions.administrator:
             return True
 
         missing = []
