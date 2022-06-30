@@ -1,19 +1,19 @@
 import asyncio
-import orjson
-from urllib.parse import quote as urlquote
-import aiohttp
 from enum import Enum
 from os import environ as env
+from urllib.parse import quote as urlquote
 
+import aiohttp
+import orjson
+
+from .errors import *
 from ..entities import *
 from ..flags import *
-from .errors import *
 
 __all__ = (
     "Route",
     "HTTPClient",
-    "File",
-    "BucketValues"
+    "File"
 )
 
 
@@ -81,40 +81,19 @@ class File:
         self._closer()
 
 
-class BucketValues:
-    def __init__(self, delta, remaining=None, is_global=False):
-        self.delta = delta
-        self.remaining = remaining
-        self.is_global = is_global
-
-    def __str__(self):
-        return f"{'global' if self.is_global else ''} {self.remaining} {self.delta}"
-
-    async def wait(self):
-        if self.remaining == 0:
-            await asyncio.sleep(self.delta)
-
-
 class Route:
-    BASE = f"{env.get('DISCORD_API_URL', 'https://discord.com')}/api/v9"
+    BASE = env.get('DISCORD_API_URL', 'https://discord.com')
 
-    def __init__(self, method, path, **params):
+    def __init__(self, method, path, api_prefix=True, **params):
         self.method = method
         self.path = path.strip("/")
 
-        self.url = f"{self.BASE}/{self.path}".format(**{k: urlquote(str(v)) for k, v in params.items()})
+        self.full_path = self.path.format(**{k: urlquote(str(v)) for k, v in params.items()})
+        self.url = f"{self.BASE}{'/api/v9' if api_prefix else ''}/{self.full_path}"
 
         self._channel_id = params.get("channel_id")
         self._guild_id = params.get("guild_id")
         self._webhook_id = params.get("webhook_id")
-
-    @property
-    def bucket(self):
-        if self._webhook_id is not None:
-            return self._webhook_id
-
-        else:
-            return '{0._channel_id}:{0._guild_id}:{0.path}'.format(self)
 
 
 class RouteMixin:
@@ -681,11 +660,23 @@ class RouteMixin:
                   application_id=self.application_id, guild_id=entity_or_id(guild), command_id=entity_or_id(command))
         )
 
+    async def get_ratelimit_bucket(self, route: Route):
+        print(f"/{route.full_path}")
+        resp = await self.request(Route("GET", "/bucket", api_prefix=False), params={
+            "method": route.method.upper(),
+            "path": f"/{route.full_path}"
+        })
+        data = orjson.loads(resp)
+        print(data)
+        if data["found"]:
+            return data["bucket"]
+        else:
+            return None
+
 
 class HTTPClient(RouteMixin):
-    def __init__(self, token, redis, **kwargs):
+    def __init__(self, token, **kwargs):
         self._token = token
-        self._redis = redis
         self._session = kwargs.get("session")
         self.loop = kwargs.get("loop", asyncio.get_event_loop())
         self.application_id = kwargs.get("application_id")
@@ -697,30 +688,6 @@ class HTTPClient(RouteMixin):
     async def close(self):
         if self._session is not None:
             await self._session.close()
-
-    async def get_bucket(self, bucket):
-        delta = await self._redis.pttl(f"ratelimits:{bucket}")
-        if delta <= 0:
-            return None
-
-        remaining = await self._redis.get(f"ratelimits:{bucket}")
-        if remaining is None:
-            return None
-
-        return BucketValues(delta / 1000, int(remaining))
-
-    async def set_bucket(self, bucket, remaining, delta):
-        await self._redis.setex(f"ratelimits:{bucket}", max(delta, 0), remaining)
-
-    async def set_global(self, delta):
-        await self._redis.setex("ratelimits:global", max(delta, 0), 0)
-
-    async def get_global(self, delta):
-        delta = await self._redis.pttl("ratelimits:global")
-        if delta < 0:
-            return None
-
-        return BucketValues(delta / 1000, remaining=0, is_global=True)
 
     async def _perform_request(self, route, **kwargs):
         headers = {
@@ -737,40 +704,23 @@ class HTTPClient(RouteMixin):
         if "reason" in kwargs:
             headers["X-Audit-Log-Reason"] = urlquote(kwargs.pop("reason") or "", safe="/ ")
 
+        timeout = aiohttp.ClientTimeout(total=300)
         async with self._session.request(
                 method=route.method,
                 url=route.url,
                 headers=headers,
                 raise_for_status=False,
+                timeout=timeout,
                 **kwargs
         ) as resp:
             data = await json_or_text(resp)
 
             if 300 > resp.status >= 200:
-                remaining = resp.headers.get('X-Ratelimit-Remaining')
-                reset_after = resp.headers.get('X-Ratelimit-Reset-After')
-                if remaining is not None and reset_after is not None:
-                    await self.set_bucket(route.bucket, int(remaining), float(reset_after))
-
                 return data
-
-            elif resp.status == 429:
-                if resp.headers.get('Via'):
-                    retry_after = data['retry_after']
-                    is_global = data.get('global', False)
-                    if is_global:
-                        await self.set_global(retry_after)
-
-                    else:
-                        await self.set_bucket(route.bucket, 0, retry_after)
-
-                else:
-                    # Most likely cloudflare banned
-                    await self.set_global(1)
 
             raise HTTPException(resp.status, data)
 
-    async def request(self, route, converter=None, wait=True, files=None, **kwargs):
+    async def request(self, route, converter=None, files=None, **kwargs):
         if self._session is None:
             bind_to = env.get("BIND_INTERFACE")
             if bind_to is not None:
@@ -798,14 +748,6 @@ class HTTPClient(RouteMixin):
 
                     options["data"] = data
 
-                ratelimit = await self.get_bucket(route.bucket)
-                if ratelimit:
-                    if wait:
-                        await ratelimit.wait()
-
-                    else:
-                        raise HTTPTooManyRequests("Bucket depleted")
-
                 await self.semaphore.acquire()
                 try:
                     result = await self._perform_request(route, **options)
@@ -816,6 +758,8 @@ class HTTPClient(RouteMixin):
                     return converter(result)
 
                 return result
+            except asyncio.TimeoutError:
+                await asyncio.sleep(5)
             except HTTPException as e:
                 if e.status == 400:
                     raise HTTPBadRequest(e.text)
@@ -830,10 +774,7 @@ class HTTPClient(RouteMixin):
                     raise HTTPNotFound(e.text)
 
                 elif e.status == 429:
-                    if not wait:
-                        raise HTTPTooManyRequests(e.text)
-                    else:
-                        await asyncio.sleep(i)
+                    await asyncio.sleep(i)
 
                 elif e.status < 500 or i == self.max_retries - 1:
                     raise e

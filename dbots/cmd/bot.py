@@ -385,7 +385,7 @@ class InteractionBot:
         self.session = ClientSession(loop=self.loop, connector=connector)
 
         self.redis = await aioredis.create_redis_pool(redis_url)
-        self.http = HTTPClient(self.token, self.redis)
+        self.http = HTTPClient(self.token)
         app = await self.http.get_application()
         self.http.application_id = app["id"]
         for t in self.tasks:
