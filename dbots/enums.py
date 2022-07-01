@@ -26,6 +26,8 @@ class ChannelType(IntEnum):
     PUBLIC_GUILD_THREAD = 11
     PRIVATE_GUILD_THREAD = 12
     GUILD_STAGE = 13
+    GUILD_DIRECTORY = 14
+    GUILD_FORUM = 15
 
 
 class DefaultMessageNotifications(IntEnum):
@@ -76,7 +78,7 @@ class MessageType(IntEnum):
     THREAD_STARTER_MESSAGE = 21
     GUILD_INVITE_REMINDER = 22
     CONTEXT_MENU_COMMAND = 23
-    UNKNOWN_1 = 24
+    AUTO_MODERATION_ACTION = 24
     UNKNOWN_2 = 25
     UNKNOWN_3 = 26
     UNKNOWN_4 = 27
