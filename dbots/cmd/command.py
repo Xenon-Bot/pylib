@@ -127,8 +127,7 @@ class Command:
         self.options = kwargs.get("options", [])
         self.sub_commands = []
 
-        self.default_member_permissions = str(
-            kwargs["default_member_permissions"]) if "default_member_permissions" in kwargs else None,
+        self.default_member_permissions = str(kwargs["default_member_permissions"]) if "default_member_permissions" in kwargs else None
         self.dm_permission = kwargs.get("dm_permission", True)
 
         self.checks = kwargs.get("checks", [])
