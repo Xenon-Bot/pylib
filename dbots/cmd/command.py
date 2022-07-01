@@ -127,7 +127,9 @@ class Command:
         self.options = kwargs.get("options", [])
         self.sub_commands = []
 
-        self.default_permissions = kwargs.get("default_permissions", True)
+        self.default_member_permissions = kwargs.get("default_member_permissions", 0)
+        self.dm_permission = kwargs.get("dm_permission", True)
+
         self.checks = kwargs.get("checks", [])
         self.cooldown = kwargs.get("cooldown")
         self.guild_id = kwargs.get("guild_id")
@@ -182,7 +184,8 @@ class Command:
             "name": self.name,
             "description": self.description,
             "options": [o.to_payload() for o in self.options] + [s.to_payload() for s in self.sub_commands],
-            "default_permission": self.default_permissions
+            "default_member_permissions": str(self.default_member_permissions),
+            "dm_permission": self.dm_permission
         }
 
 
