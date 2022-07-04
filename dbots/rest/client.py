@@ -676,12 +676,9 @@ class HTTPClient(RouteMixin):
     def __init__(self, token, **kwargs):
         self._token = token
         self._session = kwargs.get("session")
-        self.loop = kwargs.get("loop", asyncio.get_event_loop())
         self.application_id = kwargs.get("application_id")
 
         self.max_retries = kwargs.get("max_retries", 5)
-        self.semaphore = None
-        self.semaphore = asyncio.Semaphore(kwargs.get("max_concurrency", 50))
 
     async def close(self):
         if self._session is not None:
@@ -726,7 +723,7 @@ class HTTPClient(RouteMixin):
             else:
                 connector = aiohttp.TCPConnector()
 
-            self._session = aiohttp.ClientSession(loop=self.loop, connector=connector)
+            self._session = aiohttp.ClientSession(connector=connector)
 
         for i in range(self.max_retries):
             options = kwargs.copy()
@@ -746,18 +743,14 @@ class HTTPClient(RouteMixin):
 
                     options["data"] = data
 
-                await self.semaphore.acquire()
-                try:
-                    result = await self._perform_request(route, **options)
-                finally:
-                    self.semaphore.release()
+                result = await self._perform_request(route, **options)
 
                 if converter:
                     return converter(result)
 
                 return result
             except asyncio.TimeoutError:
-                await asyncio.sleep(5)
+                await asyncio.sleep(i)
             except HTTPException as e:
                 if e.status == 400:
                     raise HTTPBadRequest(e.text)
