@@ -765,10 +765,15 @@ class HTTPClient(RouteMixin):
                     raise HTTPNotFound(e.text)
 
                 elif e.status == 429:
-                    await asyncio.sleep(i)
+                    if e.retry_after:
+                        await asyncio.sleep(e.retry_after)
+                    else:
+                        await asyncio.sleep(i)
 
                 elif e.status < 500 or i == self.max_retries - 1:
                     raise e
 
                 else:
                     await asyncio.sleep(i)
+
+        raise HTTPException(500, "Max request retries reached, something went terribly wrong ...")

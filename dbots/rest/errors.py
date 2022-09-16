@@ -18,6 +18,7 @@ class HTTPException(XenonException):
         self.status = status
         if isinstance(message, dict):
             self.code = message.get("code", 0)
+            self.retry_after = message.get("retry_after")
             base = message.get("message", "")
             errors = message.get("errors")
             if errors is not None:
@@ -29,6 +30,7 @@ class HTTPException(XenonException):
         else:
             self.text = message
             self.code = 0
+            self.retry_after = None
 
         fmt = '{0.status} (error code: {1}): {2}'
         super().__init__(fmt.format(self, self.code, self.text))
