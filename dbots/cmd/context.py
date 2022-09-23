@@ -139,9 +139,17 @@ class CommandContext(InteractionContext):
 
     async def modal(self, *args, **kwargs):
         if self.state != ContextState.NOT_REPLIED:
-            raise TimeoutError("Command has already been responded to")
+            raise Exception("Command has already been responded to")
 
         resp = InteractionResponse.modal(*args, **kwargs)
+        self._future.set_result(resp)
+        self.state = ContextState.REPLIED
+
+    async def upsell(self, *args, **kwargs):
+        if self.state != ContextState.NOT_REPLIED:
+            raise Exception("Command has already been responded to")
+
+        resp = InteractionResponse.upsell(*args, **kwargs)
         self._future.set_result(resp)
         self.state = ContextState.REPLIED
 
@@ -225,6 +233,14 @@ class ComponentContext(InteractionContext):
             resp = InteractionResponse.defer_message_update(*args, **kwargs)
             self._future.set_result(resp)
             self.state = ContextState.DEFERRED
+
+    async def upsell(self, *args, **kwargs):
+        if self.state != ContextState.NOT_REPLIED:
+            raise Exception("Command has already been responded to")
+
+        resp = InteractionResponse.upsell(*args, **kwargs)
+        self._future.set_result(resp)
+        self.state = ContextState.REPLIED
 
     async def delete_response(self, message_id="@original"):
         return await self.bot.http.delete_interaction_response(self.token, message_id)

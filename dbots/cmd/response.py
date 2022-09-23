@@ -17,6 +17,7 @@ class InteractionResponseType(IntEnum):
     UPDATE_MESSAGE = 7
     APPLICATION_COMMAND_AUTOCOMPLETE_RESULT = 8
     MODAL = 9
+    ENTITLEMENT_UPSELL = 10
 
 
 class InteractionResponse:
@@ -81,6 +82,10 @@ class InteractionResponse:
     @classmethod
     def modal(cls, *args, **kwargs):
         return cls(InteractionResponseType.MODAL, *args, **kwargs)
+
+    @classmethod
+    def upsell(cls, *args, **kwargs):
+        return cls(InteractionResponseType.ENTITLEMENT_UPSELL, *args, **kwargs)
 
     def to_dict(self):
         return {
