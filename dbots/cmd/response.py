@@ -2,7 +2,6 @@ from enum import IntEnum
 
 from .components import *
 
-
 __all__ = (
     "InteractionResponseType",
     "InteractionResponse"
@@ -25,29 +24,35 @@ class InteractionResponse:
         self.type = type
         self.files = kwargs.pop("files", [])
         self.data = kwargs
-        if "allowed_mentions" not in self.data:
-           self.data["allowed_m/mentions"] = {"parse": ["users"]}
 
-        self.data["content"] = content
-        if kwargs.pop("ephemeral", False):
-            self.data["flags"] = 1 << 6
+        if self.type in {InteractionResponseType.CHANNEL_MESSAGE, InteractionResponseType.DEFERRED}:
+            if kwargs.pop("ephemeral", False):
+                self.data["flags"] = 1 << 6
 
-        components = kwargs.get("components", [])
-        component = kwargs.get("component")
-        if component is not None:
-            components = [ActionRow(component)]
+        if self.type in {InteractionResponseType.CHANNEL_MESSAGE, InteractionResponseType.UPDATE_MESSAGE}:
+            if "allowed_mentions" not in self.data:
+                self.data["allowed_mentions"] = {"parse": ["users"]}
 
-        elif len(components) != 0:
-            if not isinstance(components[0], ActionRow):
-                components = [ActionRow(*components)]
+            self.data["content"] = content
 
-            elif not isinstance(components[0], Component):
-                components = [ActionRow(*row) for row in components]
+        if self.type in {InteractionResponseType.CHANNEL_MESSAGE, InteractionResponseType.UPDATE_MESSAGE,
+                         InteractionResponseType.MODAL}:
+            components = kwargs.get("components", [])
+            component = kwargs.get("component")
+            if component is not None:
+                components = [ActionRow(component)]
 
-        self.data["components"] = [
-            r.to_payload()
-            for r in components
-        ]
+            elif len(components) != 0:
+                if not isinstance(components[0], ActionRow):
+                    components = [ActionRow(*components)]
+
+                elif not isinstance(components[0], Component):
+                    components = [ActionRow(*row) for row in components]
+
+            self.data["components"] = [
+                r.to_payload()
+                for r in components
+            ]
 
     @classmethod
     def pong(cls):
