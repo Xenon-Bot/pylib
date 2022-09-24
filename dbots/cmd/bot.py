@@ -1,25 +1,24 @@
-import json
-from aiohttp import web, ClientSession, TCPConnector
 import asyncio
-from nacl.signing import VerifyKey
-from nacl.exceptions import BadSignatureError
-import traceback
-import sys
 import inspect
-import aioredis
+import json
+import sys
+import traceback
 from os import environ as env
-from weakref import WeakValueDictionary
 
-from ..utils import *
-from ..rest import *
+import aioredis
+from aiohttp import web, ClientSession, TCPConnector
+from nacl.exceptions import BadSignatureError
+from nacl.signing import VerifyKey
 
 from .command import *
+from .components import *
 from .context import *
+from .modals import *
 from .payloads import *
 from .response import *
 from .task import *
-from .components import *
-from .modals import *
+from ..rest import *
+from ..utils import *
 
 __all__ = (
     "InteractionBot",
@@ -34,8 +33,10 @@ class InteractionBot:
         self.modals = []
         self.public_key = VerifyKey(bytes.fromhex(kwargs["public_key"]))
 
-        self.session = None
         self.guild_id = kwargs.get("guild_id")  # Can be used during development to avoid the 1 hour cache
+        self.beta_guild_id = kwargs.get("beta_guild_id")
+
+        self.session = None
         self.app_id = None
 
         # Filled by setup()
@@ -412,9 +413,14 @@ class InteractionBot:
                 matching.id = cmd["id"]
 
     async def push_commands(self):
-        data = [c.to_payload() for c in self.commands if c.register]
         if self.guild_id is None:
+            data = [c.to_payload() for c in self.commands if not c.beta]
             await self.http.replace_global_commands(data)
 
+            if self.beta_guild_id:
+                data = [c.to_payload() for c in self.commands if c.beta]
+                await self.http.replace_guild_commands(self.beta_guild_id, data)
+
         else:
+            data = [c.to_payload() for c in self.commands]
             await self.http.replace_guild_commands(self.guild_id, data)

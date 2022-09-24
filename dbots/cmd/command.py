@@ -132,9 +132,9 @@ class Command:
 
         self.checks = kwargs.get("checks", [])
         self.cooldown = kwargs.get("cooldown")
-        self.guild_id = kwargs.get("guild_id")
         self.register = kwargs.get("register", True)
         self.ephemeral = kwargs.get("ephemeral", True)
+        self.beta = kwargs.get("beta", False)
 
     @property
     def full_name(self):
