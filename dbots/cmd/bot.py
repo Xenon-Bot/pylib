@@ -33,7 +33,6 @@ class InteractionBot:
         self.components = []
         self.modals = []
         self.public_key = VerifyKey(bytes.fromhex(kwargs["public_key"]))
-        self.token = kwargs["token"]
 
         self.session = None
         self.guild_id = kwargs.get("guild_id")  # Can be used during development to avoid the 1 hour cache
@@ -385,7 +384,7 @@ class InteractionBot:
         self.session = ClientSession(loop=self.loop, connector=connector)
 
         self.redis = await aioredis.create_redis_pool(redis_url)
-        self.http = HTTPClient(self.token)
+        self.http = HTTPClient()
         app = await self.http.get_application()
         self.http.application_id = app["id"]
         for t in self.tasks:

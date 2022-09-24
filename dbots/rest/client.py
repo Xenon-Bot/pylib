@@ -82,7 +82,7 @@ class File:
 
 
 class Route:
-    BASE = env.get('DISCORD_API_URL', 'https://discord.com')
+    BASE = env.get('PROXY_URL', 'http://127.0.0.1:8888')
 
     def __init__(self, method, path, api_prefix=True, **params):
         self.method = method
@@ -673,8 +673,7 @@ class RouteMixin:
 
 
 class HTTPClient(RouteMixin):
-    def __init__(self, token, **kwargs):
-        self._token = token
+    def __init__(self, **kwargs):
         self._session = kwargs.get("session")
         self.application_id = kwargs.get("application_id")
 
@@ -686,8 +685,7 @@ class HTTPClient(RouteMixin):
 
     async def _perform_request(self, route, **kwargs):
         headers = {
-            "User-Agent": "",
-            "Authorization": kwargs.pop("auth", f"Bot {self._token}")
+            "User-Agent": ""
         }
 
         if "json" in kwargs:
