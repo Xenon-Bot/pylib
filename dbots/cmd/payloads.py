@@ -44,7 +44,7 @@ class InteractionPayload:
         self.token = data.get("token")
         self.version = data.get("version")
         self.app_permissions = Permissions(int(data["app_permissions"])) if "app_permissions" in data else None
-        self.entitlement_sku_ids = data.get("entitlement_sku_ids", [])
+        self.entitlement_sku_ids = data.get("entitlement_sku_ids")
 
         if self.type != InteractionType.PING:
             if "member" in data:

@@ -85,6 +85,14 @@ class MessageType(IntEnum):
     UNKNOWN_5 = 28
     UNKNOWN_6 = 29
     UNKNOWN_7 = 30
+    UNKNOWN_8 = 31
+    UNKNOWN_9 = 32
+    UNKNOWN_10 = 33
+    UNKNOWN_11 = 34
+    UNKNOWN_12 = 35
+    UNKNOWN_13 = 36
+    UNKNOWN_14 = 37
+    UNKNOWN_15 = 38
 
 
 class WebhookType(IntEnum):
